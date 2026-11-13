@@ -1,0 +1,260 @@
+{
+  "wallets": [
+    [
+      "princemahid901@gmail.com",
+      {
+        "userId": "princemahid901@gmail.com",
+        "balance": 250,
+        "currency": "USD",
+        "transactions": [
+          {
+            "txId": "ORIO-TX-770182",
+            "type": "deposit",
+            "amount": 250,
+            "currency": "USD",
+            "status": "completed",
+            "timestamp": "2026-11-13T04:08:35.046Z",
+            "description": "Welcome Global Wallet Credit"
+          }
+        ]
+      }
+    ]
+  ],
+  "videos": [
+    {
+      "id": "vid-1",
+      "creatorId": "creator-1",
+      "creatorName": "Sophia Vance",
+      "creatorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "title": "Tokyo Midnight Neon City Walk & Street Culture",
+      "description": "Join a safe, scenic evening walk through Tokyo Shibuya and Shinjuku alleys with live photography tips.",
+      "category": "Travel",
+      "hashtags": [
+        "tokyo",
+        "travel",
+        "nightwalk",
+        "photography"
+      ],
+      "visibility": "public",
+      "allowedViewers": [],
+      "externalUrl": "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-lights-playing-with-her-hair-41584-large.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600",
+      "safeContent": true,
+      "moderationStatus": "approved",
+      "views": 0,
+      "likedBy": [],
+      "createdAt": "2026-11-11T04:08:30.439Z"
+    },
+    {
+      "id": "vid-2",
+      "creatorId": "creator-2",
+      "creatorName": "Aarav Rahman",
+      "creatorAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      "title": "Acoustic Stage Session & Bengali Folk Fusion",
+      "description": "Live stage rehearsal and guitar arrangements from Dhaka acoustic studio.",
+      "category": "Music",
+      "hashtags": [
+        "music",
+        "acoustic",
+        "dhaka",
+        "concert"
+      ],
+      "visibility": "public",
+      "allowedViewers": [],
+      "externalUrl": "https://assets.mixkit.co/videos/preview/mixkit-musician-playing-on-stage-with-colorful-lights-41982-large.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600",
+      "safeContent": true,
+      "moderationStatus": "approved",
+      "views": 0,
+      "likedBy": [],
+      "createdAt": "2026-11-12T04:08:30.439Z"
+    },
+    {
+      "id": "vid-3",
+      "creatorId": "creator-1",
+      "creatorName": "Sophia Vance",
+      "creatorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "title": "Creator Masterclass: Lighting & HD Streaming Setup",
+      "description": "Members-only breakdown of ring lighting, camera framing, and low-latency audio settings.",
+      "category": "Education",
+      "hashtags": [
+        "creator",
+        "streaming",
+        "lighting",
+        "tutorial"
+      ],
+      "visibility": "premium",
+      "allowedViewers": [],
+      "externalUrl": "https://assets.mixkit.co/videos/preview/mixkit-woman-taking-pictures-with-a-vintage-camera-42425-large.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600",
+      "safeContent": true,
+      "moderationStatus": "approved",
+      "views": 0,
+      "likedBy": [],
+      "createdAt": "2026-11-12T16:08:30.439Z"
+    },
+    {
+      "id": "vid-4",
+      "creatorId": "creator-3",
+      "creatorName": "Elena Rostova",
+      "creatorAvatar": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
+      "title": "Morning Yoga & Mobility Flow for Desk Creators",
+      "description": "Free 15-minute daily stretch and posture routine for healthy screen habits.",
+      "category": "Fitness",
+      "hashtags": [
+        "fitness",
+        "wellness",
+        "yoga",
+        "morning"
+      ],
+      "visibility": "public",
+      "allowedViewers": [],
+      "externalUrl": "https://assets.mixkit.co/videos/preview/mixkit-young-woman-practicing-yoga-at-home-42430-large.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600",
+      "safeContent": true,
+      "moderationStatus": "approved",
+      "views": 0,
+      "likedBy": [],
+      "createdAt": "2026-11-12T22:08:30.439Z"
+    }
+  ],
+  "liveStreams": [
+    {
+      "id": "live-1",
+      "creatorId": "creator-1",
+      "creatorName": "Sophia Vance",
+      "creatorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "title": "Tokyo Sunset Q&A & Street Music Walk (Free Public Live)",
+      "description": "Open public stream! Say hello from your country in moderated live chat.",
+      "category": "Travel",
+      "accessType": "free",
+      "price": 0,
+      "streamUrl": "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-lights-playing-with-her-hair-41584-large.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600",
+      "isLive": true,
+      "likedBy": [],
+      "createdAt": "2026-11-13T04:08:30.440Z",
+      "chatHistory": []
+    },
+    {
+      "id": "live-2",
+      "creatorId": "creator-2",
+      "creatorName": "Aarav Rahman",
+      "creatorAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+      "title": "Backstage Concert Rehearsal & Songwriting Workshop",
+      "description": "Premium paid broadcast with live audio Q&A and full backstage tour.",
+      "category": "Music",
+      "accessType": "premium",
+      "price": 9.99,
+      "streamUrl": "https://assets.mixkit.co/videos/preview/mixkit-musician-playing-on-stage-with-colorful-lights-41982-large.mp4",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600",
+      "isLive": true,
+      "likedBy": [],
+      "createdAt": "2026-11-13T04:08:30.440Z",
+      "chatHistory": []
+    }
+  ],
+  "subscriptions": [],
+  "livePasses": [],
+  "follows": [],
+  "watchHistory": [],
+  "savedVideos": [],
+  "privacy": [
+    [
+      "princemahid901@gmail.com",
+      {
+        "messagingPrivacy": "followers",
+        "allowUnsolicitedRequests": true,
+        "blockedUsers": []
+      }
+    ]
+  ],
+  "approvedRequesters": [],
+  "reports": [],
+  "messages": [
+    {
+      "id": "msg-1",
+      "senderId": "support@oriolivecall.com",
+      "recipientId": "guest-user",
+      "text": "Welcome to OrioLiveCall! Private messaging respects your privacy settings.",
+      "timestamp": "2026-11-13T04:08:30.439Z",
+      "read": false,
+      "isRequest": false
+    }
+  ],
+  "paymentMethods": [],
+  "profileDirectory": [
+    {
+      "id": "creator-1",
+      "profileId": "ORI-100001",
+      "accountKey": "creator-1",
+      "name": "Sophia Vance",
+      "username": "@sophia_tokyo",
+      "country": "Japan",
+      "gender": "Female",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "bio": "Tokyo nightlife vlogger, live music streaming & 1-on-1 chats! 🌃✨",
+      "creatorBadge": true,
+      "online": true,
+      "subscribersCount": 0,
+      "monthlyPrice": 19.99,
+      "yearlyPrice": 149.99,
+      "livestreamUrl": "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-lights-playing-with-her-hair-41584-large.mp4",
+      "updatedAt": "2026-11-13T04:25:19.771Z"
+    },
+    {
+      "id": "creator-2",
+      "profileId": "ORI-100002",
+      "accountKey": "creator-2",
+      "name": "Anika Rahman",
+      "username": "@anika_dhaka",
+      "country": "Bangladesh",
+      "gender": "Female",
+      "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      "bio": "Cultural Q&A, acoustic music and daily live shows from Dhaka! 🇧🇩❤️",
+      "creatorBadge": true,
+      "online": true,
+      "subscribersCount": 0,
+      "monthlyPrice": 14.99,
+      "yearlyPrice": 119.99,
+      "livestreamUrl": "https://assets.mixkit.co/videos/preview/mixkit-musician-playing-on-stage-with-colorful-lights-41982-large.mp4",
+      "updatedAt": "2026-11-13T04:25:19.771Z"
+    },
+    {
+      "id": "creator-3",
+      "profileId": "ORI-100003",
+      "accountKey": "creator-3",
+      "name": "Jessica Miller",
+      "username": "@jessica_nyc",
+      "country": "United States",
+      "gender": "Female",
+      "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
+      "bio": "New York wellness & live lifestyle streams. Join my private chat! 🗽",
+      "creatorBadge": true,
+      "online": false,
+      "subscribersCount": 0,
+      "monthlyPrice": 24.99,
+      "yearlyPrice": 199.99,
+      "livestreamUrl": "",
+      "updatedAt": "2026-11-13T04:25:19.771Z"
+    },
+    {
+      "id": "test-verify@orio.dev",
+      "profileId": "ORI-100004",
+      "accountKey": "test-verify@orio.dev",
+      "name": "Verify User",
+      "username": "@verifyuser_0004",
+      "country": "Bangladesh",
+      "gender": "other",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "bio": "Verified OrioLiveCall Member",
+      "creatorBadge": true,
+      "online": true,
+      "subscribersCount": 0,
+      "monthlyPrice": 14.99,
+      "yearlyPrice": 119.99,
+      "updatedAt": "2026-11-13T04:25:25.594Z"
+    }
+  ],
+  "nextProfileSeq": 100005
+}

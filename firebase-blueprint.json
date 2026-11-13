@@ -1,0 +1,456 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Private authenticated user account and 18+ age verification details.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "profileId": { "type": "string", "maxLength": 32, "pattern": "^ORI-[0-9]{6,12}$" },
+        "email": { "type": "string", "maxLength": 254 },
+        "birthDate": { "type": "string", "maxLength": 20 },
+        "age": { "type": "number" },
+        "verified": { "type": "boolean" },
+        "preferredLanguage": { "type": "string", "enum": ["en", "bn"] },
+        "videoQuality": { "type": "string", "enum": ["SD", "HD", "4K"] },
+        "cameraEnabled": { "type": "boolean" },
+        "micEnabled": { "type": "boolean" },
+        "messagingPrivacy": { "type": "string", "enum": ["everyone", "friends", "followers", "subscribers", "nobody"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "userId", "verified", "createdAt", "updatedAt"]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Publicly visible creator or member profile.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "profileId": { "type": "string", "maxLength": 32, "pattern": "^ORI-[0-9]{6,12}$" },
+        "name": { "type": "string", "maxLength": 100 },
+        "username": { "type": "string", "maxLength": 60 },
+        "gender": { "type": "string", "enum": ["girls", "boys", "other"] },
+        "country": { "type": "string", "maxLength": 80 },
+        "bio": { "type": "string", "maxLength": 500 },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "online": { "type": "boolean" },
+        "creatorBadge": { "type": "boolean" },
+        "subscribersCount": { "type": "number" },
+        "monthlyPrice": { "type": "number" },
+        "yearlyPrice": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "userId", "name", "gender", "country", "updatedAt"]
+    },
+    "WalletAccount": {
+      "title": "WalletAccount",
+      "description": "User wallet balance and currency.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "balance": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "balance", "currency", "updatedAt"]
+    },
+    "WalletTransaction": {
+      "title": "WalletTransaction",
+      "description": "Immutable transaction record in user wallet.",
+      "type": "object",
+      "properties": {
+        "txId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "type": { "type": "string", "enum": ["deposit", "send", "receive", "withdraw", "refund", "gift", "subscription", "live_ticket"] },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "counterparty": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["completed", "pending", "disputed", "refunded"] },
+        "description": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["txId", "uid", "type", "amount", "currency", "status", "createdAt"]
+    },
+    "PrivateMessage": {
+      "title": "PrivateMessage",
+      "description": "Private 1-to-1 message between two users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "recipientId": { "type": "string", "maxLength": 128 },
+        "text": { "type": "string", "maxLength": 2000 },
+        "image": { "type": "string", "maxLength": 500 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "senderId", "recipientId", "text", "read", "createdAt"]
+    },
+    "ShortVideo": {
+      "title": "ShortVideo",
+      "description": "Short vertical creator video.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "creatorName": { "type": "string", "maxLength": 100 },
+        "creatorAvatar": { "type": "string", "maxLength": 500 },
+        "videoUrl": { "type": "string", "maxLength": 500 },
+        "thumbnailUrl": { "type": "string", "maxLength": 500 },
+        "description": { "type": "string", "maxLength": 500 },
+        "likes": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "authorUid", "creatorName", "videoUrl", "description", "likes", "commentsCount", "createdAt"]
+    },
+    "AiConversationLog": {
+      "title": "AiConversationLog",
+      "description": "AI Global Talking session summary and preferences per user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "personaCountry": { "type": "string", "maxLength": 80 },
+        "language": { "type": "string", "enum": ["en", "bn"] },
+        "lastMessage": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "personaCountry", "language", "createdAt"]
+    },
+    "VideoItem": {
+      "title": "VideoItem",
+      "description": "Public, private, or premium creator video metadata (stream URLs gated on server for non-public videos).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "creatorName": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 160 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "category": { "type": "string", "maxLength": 40 },
+        "visibility": { "type": "string", "enum": ["public", "private", "premium"] },
+        "thumbnailUrl": { "type": "string", "maxLength": 500 },
+        "safeContent": { "type": "boolean" },
+        "moderationStatus": { "type": "string", "enum": ["approved", "pending", "flagged"] },
+        "views": { "type": "number" },
+        "likesCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "authorUid", "creatorName", "title", "category", "visibility", "safeContent", "moderationStatus", "views", "likesCount", "createdAt", "updatedAt"]
+    },
+    "VideoLike": {
+      "title": "VideoLike",
+      "description": "Database-backed per-user like record for a video.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "videoId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "videoId", "createdAt"]
+    },
+    "CreatorSubscription": {
+      "title": "CreatorSubscription",
+      "description": "Free follow or verified paid membership subscription to a creator.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "creatorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "creatorName": { "type": "string", "maxLength": 100 },
+        "plan": { "type": "string", "enum": ["free_follow", "monthly", "yearly"] },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "cancelled"] },
+        "autoRenew": { "type": "boolean" },
+        "renewalDate": { "type": "string", "maxLength": 40 },
+        "expiresAt": { "type": "string", "maxLength": 40 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "creatorId", "creatorName", "plan", "price", "status", "createdAt", "updatedAt"]
+    },
+    "LiveStream": {
+      "title": "LiveStream",
+      "description": "Free or premium creator livestream metadata.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "creatorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "creatorName": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 160 },
+        "category": { "type": "string", "maxLength": 40 },
+        "accessType": { "type": "string", "enum": ["free", "premium"] },
+        "price": { "type": "number" },
+        "isLive": { "type": "boolean" },
+        "viewerCount": { "type": "number" },
+        "likesCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "creatorUid", "creatorName", "title", "category", "accessType", "price", "isLive", "viewerCount", "likesCount", "createdAt"]
+    },
+    "ContentReport": {
+      "title": "ContentReport",
+      "description": "User safety report against inappropriate videos, livestreams, users, or messages.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reporterUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "targetType": { "type": "string", "enum": ["video", "short", "livestream", "user", "message"] },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "reason": { "type": "string", "maxLength": 300 },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "removed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "reporterUid", "targetType", "targetId", "reason", "status", "createdAt"]
+    },
+    "PaymentMethod": {
+      "title": "PaymentMethod",
+      "description": "Masked payment method metadata stored privately under a user account.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "methodType": { "type": "string", "enum": ["bank_transfer", "debit_card", "credit_card", "mobile_banking"] },
+        "provider": { "type": "string", "maxLength": 80 },
+        "label": { "type": "string", "maxLength": 100 },
+        "maskedNumber": { "type": "string", "maxLength": 32 },
+        "holderName": { "type": "string", "maxLength": 100 },
+        "expiry": { "type": "string", "maxLength": 16 },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "methodType", "provider", "label", "maskedNumber", "isDefault", "createdAt"]
+    },
+    "CallRating": {
+      "title": "CallRating",
+      "description": "Post-call user rating and quality feedback collected after Next Person or End Call.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actionTrigger": { "type": "string", "enum": ["next_person", "end_call"] },
+        "callMode": { "type": "string", "enum": ["random_video", "ai_global_talk"] },
+        "partnerName": { "type": "string", "maxLength": 100 },
+        "partnerCountry": { "type": "string", "maxLength": 80 },
+        "overallRating": { "type": "number" },
+        "callQualityRating": { "type": "number" },
+        "durationSec": { "type": "number" },
+        "videoQuality": { "type": "string", "maxLength": 16 },
+        "stabilityStatus": { "type": "string", "maxLength": 32 },
+        "comment": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "actionTrigger", "callMode", "overallRating", "callQualityRating", "durationSec", "createdAt"]
+    },
+    "MatchingQueueEntry": {
+      "title": "MatchingQueueEntry",
+      "description": "Active matching queue entry for free 1-to-1 global random video calling.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "targetGender": { "type": "string", "enum": ["girls", "boys", "any"] },
+        "targetCountry": { "type": "string", "maxLength": 80 },
+        "status": { "type": "string", "enum": ["waiting", "matched", "cancelled"] },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "targetGender", "targetCountry", "status", "joinedAt"]
+    },
+    "VideoSession": {
+      "title": "VideoSession",
+      "description": "One-to-one video session with mutual acceptance and zero server recording.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userAId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userBId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "acceptedA": { "type": "boolean" },
+        "acceptedB": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending_consent", "connecting", "connected", "reconnecting", "disconnected", "ended"] },
+        "recordingEnabled": { "type": "boolean" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "userAId", "userBId", "acceptedA", "acceptedB", "status", "recordingEnabled", "startedAt"]
+    },
+    "UserPreference": {
+      "title": "UserPreference",
+      "description": "User matching and voluntary profile gender/country preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "targetGender": { "type": "string", "enum": ["girls", "boys", "any"] },
+        "targetCountry": { "type": "string", "maxLength": 80 },
+        "voluntaryGender": { "type": "string", "maxLength": 32 },
+        "preferredQuality": { "type": "string", "enum": ["SD", "HD", "4K"] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "targetGender", "targetCountry", "preferredQuality", "updatedAt"]
+    },
+    "AgeVerification": {
+      "title": "AgeVerification",
+      "description": "Private server-audited adult (18+) verification record. Never exposed publicly.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "status": { "type": "string", "enum": ["unverified", "verified", "rejected", "suspended"] },
+        "method": { "type": "string", "maxLength": 64 },
+        "age": { "type": "number" },
+        "idDocType": { "type": "string", "maxLength": 40 },
+        "issuingCountry": { "type": "string", "maxLength": 80 },
+        "verifiedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "status", "method", "age", "updatedAt"]
+    },
+    "FriendRequest": {
+      "title": "FriendRequest",
+      "description": "Friend request between two users in Global Friends.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "recipientUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "senderUid", "recipientUid", "status", "createdAt", "updatedAt"]
+    },
+    "Friendship": {
+      "title": "Friendship",
+      "description": "Accepted mutual friendship between two users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userAId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userBId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userAId", "userBId", "createdAt"]
+    },
+    "BlockedUser": {
+      "title": "BlockedUser",
+      "description": "Private block entry preventing calls, matches, friend requests, and messages.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "blockerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "blockedUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reason": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "blockerUid", "blockedUid", "createdAt"]
+    },
+    "UserPrivacySetting": {
+      "title": "UserPrivacySetting",
+      "description": "Private privacy preferences controlling online status visibility, discovery, friend requests, and messaging.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "messagingPrivacy": { "type": "string", "enum": ["everyone", "friends", "followers", "subscribers", "nobody"] },
+        "allowUnsolicitedRequests": { "type": "boolean" },
+        "showOnlineStatus": { "type": "boolean" },
+        "showInGlobalFriends": { "type": "boolean" },
+        "allowFriendRequests": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "messagingPrivacy", "allowUnsolicitedRequests", "showOnlineStatus", "showInGlobalFriends", "allowFriendRequests", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Private user account and PII strictly owned by the user."
+    },
+    "/users/{userId}/paymentMethods/{methodId}": {
+      "schema": { "$ref": "#/entities/PaymentMethod" },
+      "description": "Private masked payment methods owned by the user."
+    },
+    "/profiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Public profile records for community discovery and matching."
+    },
+    "/wallets/{userId}": {
+      "schema": { "$ref": "#/entities/WalletAccount" },
+      "description": "User wallet state."
+    },
+    "/wallets/{userId}/transactions/{txId}": {
+      "schema": { "$ref": "#/entities/WalletTransaction" },
+      "description": "Transaction ledger subcollection under a user's wallet."
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/PrivateMessage" },
+      "description": "Private messages between verified users."
+    },
+    "/shorts/{shortId}": {
+      "schema": { "$ref": "#/entities/ShortVideo" },
+      "description": "Creator short videos."
+    },
+    "/aiSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/AiConversationLog" },
+      "description": "Saved AI Global Talking session logs for a user."
+    },
+    "/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/VideoItem" },
+      "description": "Public, private, and premium video catalog metadata."
+    },
+    "/videoLikes/{likeId}": {
+      "schema": { "$ref": "#/entities/VideoLike" },
+      "description": "Unique per-user video likes."
+    },
+    "/subscriptions/{subId}": {
+      "schema": { "$ref": "#/entities/CreatorSubscription" },
+      "description": "Creator follows and paid memberships."
+    },
+    "/livestreams/{streamId}": {
+      "schema": { "$ref": "#/entities/LiveStream" },
+      "description": "Free and premium livestream metadata."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/ContentReport" },
+      "description": "Safety and moderation reports."
+    },
+    "/callRatings/{ratingId}": {
+      "schema": { "$ref": "#/entities/CallRating" },
+      "description": "Post-call user feedback and quality ratings."
+    },
+    "/matching_queue/{entryId}": {
+      "schema": { "$ref": "#/entities/MatchingQueueEntry" },
+      "description": "User queue entries for free global random video calls."
+    },
+    "/video_sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/VideoSession" },
+      "description": "Mutual-acceptance peer video call sessions."
+    },
+    "/user_preferences/{userId}": {
+      "schema": { "$ref": "#/entities/UserPreference" },
+      "description": "User matching preferences."
+    },
+    "/age_verification/{userId}": {
+      "schema": { "$ref": "#/entities/AgeVerification" },
+      "description": "Private adult eligibility verification status (never public)."
+    },
+    "/friend_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/FriendRequest" },
+      "description": "Friend request workflow records."
+    },
+    "/friendships/{friendshipId}": {
+      "schema": { "$ref": "#/entities/Friendship" },
+      "description": "Verified mutual friendships."
+    },
+    "/blocked_users/{blockId}": {
+      "schema": { "$ref": "#/entities/BlockedUser" },
+      "description": "Private block list records."
+    },
+    "/user_privacy_settings/{userId}": {
+      "schema": { "$ref": "#/entities/UserPrivacySetting" },
+      "description": "Private user privacy settings controlling online visibility and DMs."
+    }
+  }
+}
