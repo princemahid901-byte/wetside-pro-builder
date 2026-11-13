@@ -34,6 +34,7 @@ const QUICK_TOPICS: Record<Language, Array<{ label: string; prompt: string }>> =
     { label: 'Payment Help', prompt: 'What payment methods are supported and how do I solve payment problems?' },
     { label: 'Free & Premium Video', prompt: 'Which videos and livestreams are free vs premium?' },
     { label: 'Privacy & Report', prompt: 'How do I change messaging privacy or report an inappropriate user?' },
+    { label: 'Security & Widget', prompt: 'Tell me about the Security & Privacy Policy, WebRTC zero recording, and how to use or embed the Privacy Widget.' },
   ],
   bn: [
     { label: 'প্রোফাইল আইডি', prompt: 'আমার Profile ID কোথায় পাবো এবং কিভাবে কপি ও শেয়ার করবো?' },
@@ -42,6 +43,7 @@ const QUICK_TOPICS: Record<Language, Array<{ label: string; prompt: string }>> =
     { label: 'পেমেন্ট সাহায্য', prompt: 'কোন কোন পেমেন্ট মেথড সাপোর্ট করে এবং পেমেন্ট সমস্যা হলে কী করবো?' },
     { label: 'ফ্রি ও প্রিমিয়াম ভিডিও', prompt: 'কোন ভিডিও ও লাইভস্ট্রিম ফ্রি এবং কোনগুলো প্রিমিয়াম?' },
     { label: 'প্রাইভেসি ও রিপোর্ট', prompt: 'মেসেজ প্রাইভেসি কিভাবে সেট করবো এবং কিভাবে রিপোর্ট করবো?' },
+    { label: 'নিরাপত্তা ও উইজেট', prompt: 'অরিও লাইভ কলের নিরাপত্তা ও গোপনীয়তা নীতি, জিরো রেকর্ডিং এবং প্রাইভেসি উইজেট সম্পর্কে বলুন।' },
   ],
 };
 

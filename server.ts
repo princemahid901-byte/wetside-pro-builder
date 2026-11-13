@@ -1212,6 +1212,16 @@ function buildDeterministicHelpFallback(question: string, lang: "en" | "bn", use
       suggestedLabel: lang === "bn" ? "ফ্রি ভিডিও দেখুন" : "Browse Videos",
     };
   }
+  if (q.includes("widget") || q.includes("gitged") || q.includes("giget") || q.includes("security") || q.includes("নিরাপত্তা") || q.includes("উইজেট")) {
+    return {
+      reply:
+        lang === "bn"
+          ? "আমাদের সম্পূর্ণ **Security & Privacy Policy** পেজ এবং লাইভ **Privacy Guardian Widget** প্ল্যাটফর্মে যুক্ত রয়েছে। এখানে ১৮+ প্রাপ্তবয়স্ক নিশ্চিতকরণ, WebRTC জিরো রেকর্ডিং ও গুগল ফায়ারবেস ক্লাউড সিকিউরিটি সক্রিয় রয়েছে। আপনি যেকোনো ওয়েবসাইট বা প্রোফাইলে এই উইজেট এম্বেড করতে পারেন।"
+          : "Our dedicated **Security & Privacy Policy** page and interactive **Privacy Guardian Widget** are live! It guarantees server-verified 18+ adult assurance, WebRTC zero video recording, and Google Firebase protection. You can also copy the iframe embed snippet to place the verified badge on any webpage.",
+      suggestedTab: "privacy-policy",
+      suggestedLabel: lang === "bn" ? "নিরাপত্তা ও উইজেট সেন্টার" : "Open Security & Widget Center",
+    };
+  }
   if (q.includes("privac") || q.includes("report") || q.includes("block") || q.includes("রিপোর্ট") || q.includes("প্রাইভেসি")) {
     return {
       reply:
@@ -3955,6 +3965,11 @@ io.on("connection", (socket) => {
 });
 
 async function startServer() {
+  app.use(express.static(path.resolve(process.cwd(), "public")));
+  app.get(["/security-privacy.html", "/privacy.html"], (_req, res) => {
+    res.sendFile(path.resolve(process.cwd(), "public", "security-privacy.html"));
+  });
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -3962,9 +3977,9 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(__dirname, "dist")));
+    app.use(express.static(path.resolve(process.cwd(), "dist")));
     app.get("*", (_req, res) => {
-      res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+      res.sendFile(path.resolve(process.cwd(), "dist", "index.html"));
     });
   }
 

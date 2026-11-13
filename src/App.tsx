@@ -47,6 +47,7 @@ import { PaymentMethodsCenterView } from './components/PaymentMethodsCenterView'
 import { HomepageShowcaseSection } from './components/HomepageShowcaseSection';
 import { AdminPromoManager } from './components/AdminPromoManager';
 import { PostCallRatingModal } from './components/PostCallRatingModal';
+import { SecurityAndPrivacyView } from './components/SecurityAndPrivacyView';
 import {
   SubscriptionItem,
   VideoFeedItem,
@@ -439,6 +440,7 @@ export default function App() {
   const [verifyCountry, setVerifyCountry] = useState('Bangladesh');
   const [verifyAttestation, setVerifyAttestation] = useState(false);
   const [verifySubmitting, setVerifySubmitting] = useState(false);
+  const [showFloatingSecurityWidget, setShowFloatingSecurityWidget] = useState(false);
   const [adminUsers, setAdminUsers] = useState<Array<{
     id: string;
     profileId: string;
@@ -2569,6 +2571,15 @@ export default function App() {
 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
+            onClick={() => setActiveTab('privacy-policy')}
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/50 border border-purple-500/40 text-xs font-semibold text-purple-200 hover:text-white hover:border-purple-400 transition-all"
+            title="Security & Privacy Policy Widget"
+          >
+            <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Security &amp; Privacy</span>
+          </button>
+
+          <button
             onClick={() => {
               setGiftTargetName('Global Creator');
               setShowGiftModal(true);
@@ -4674,15 +4685,44 @@ export default function App() {
           </div>
         )}
 
-        {/* --- 18-21. LEGAL, SAFETY RULES & SUPPORT PAGES --- */}
-        {['help', 'privacy-policy', 'terms', 'guidelines'].includes(activeTab) && (
+        {/* --- 19. DEDICATED SECURITY & PRIVACY POLICY CENTER & WIDGET TAB --- */}
+        {activeTab === 'privacy-policy' && (
+          <SecurityAndPrivacyView
+            lang={lang}
+            currentUserId={user.email || user.userId || 'guest-user'}
+            userProfileId={user.profileId}
+            privacy={msgPrivacy}
+            ageVerifyStatus={ageVerifyStatus}
+            onOpenAgeModal={() => setAgeModalOpen(true)}
+            onUpdateExtendedPrivacy={handleUpdateExtendedPrivacy}
+            onResetCookies={() => {
+              localStorage.removeItem('oriolivecall_cookie_consent');
+              setCookieConsentOpen(true);
+              setCookie18Checked(false);
+              showToast('Cookie preferences reset. Please review the 18+ checkmark banner.', 'info');
+            }}
+            showToast={showToast}
+          />
+        )}
+
+        {/* --- 18, 20, 21. LEGAL, SAFETY RULES & SUPPORT PAGES --- */}
+        {['help', 'terms', 'guidelines'].includes(activeTab) && (
           <div className="max-w-4xl mx-auto p-8 space-y-6 w-full flex-1">
             <h1 className="text-3xl font-bold text-white capitalize">{activeTab.replace('-', ' ')}</h1>
             <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-sm text-slate-300 leading-relaxed space-y-4">
-              <p><strong className="text-white">18+ Strict Eligibility & License Disclaimer:</strong> OrioLiveCall is exclusively for verified adults aged 18+. Use of this site constitutes acceptance of our age requirement, essential security cookies, and safety rules.</p>
+              <p><strong className="text-white">18+ Strict Eligibility &amp; License Disclaimer:</strong> OrioLiveCall is exclusively for verified adults aged 18+. Use of this site constitutes acceptance of our age requirement, essential security cookies, and safety rules.</p>
               <p><strong className="text-white">Non-Explicit Safe Content Only:</strong> Sexually explicit, abusive, violent, or illegal uploads, livestreams, and messages are strictly prohibited. Automated keyword filters and human moderation actively review reports.</p>
-              <p><strong className="text-white">Private Content & Privacy-First Defaults:</strong> Private videos and paid premium livestreams enforce server-side access permissions; unauthorized links cannot be accessed. Default messaging rules route unknown senders to Message Requests, and users may block or report anyone anytime.</p>
+              <p><strong className="text-white">Private Content &amp; Privacy-First Defaults:</strong> Private videos and paid premium livestreams enforce server-side access permissions; unauthorized links cannot be accessed. Default messaging rules route unknown senders to Message Requests, and users may block or report anyone anytime.</p>
               <p><strong className="text-white">WebRTC Calls:</strong> All 1-on-1 live video calls require explicit camera/microphone consent and run peer-to-peer without server video recording.</p>
+              <div className="pt-2">
+                <button
+                  onClick={() => setActiveTab('privacy-policy')}
+                  className="px-4 py-2 rounded-xl bg-purple-600/30 border border-purple-500/50 text-purple-200 text-xs font-bold hover:bg-purple-600/50 transition-all flex items-center gap-1.5"
+                >
+                  <Shield className="w-4 h-4 text-purple-400" />
+                  <span>Open Security &amp; Privacy Center (with Live Widget)</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -5275,16 +5315,181 @@ export default function App() {
         </div>
       )}
 
-      <footer className="py-6 px-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#05060f] border border-purple-500/40 shrink-0">
-          <img
-            src="/assets/aistudio/7fe1f9ca-cea4-4205-ad16-563ba4b11d39_3bbe7aa0.jpg"
-            alt="OrioLiveCall"
-            className="w-[27.2222px] h-full object-cover translate-x-[70%] scale-[2.65]"
-          />
+      <footer className="py-6 px-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#05060f] border border-purple-500/40 shrink-0">
+            <img
+              src="/assets/aistudio/7fe1f9ca-cea4-4205-ad16-563ba4b11d39_3bbe7aa0.jpg"
+              alt="OrioLiveCall"
+              className="w-[27.2222px] h-full object-cover translate-x-[70%] scale-[2.65]"
+            />
+          </div>
+          <p>{t.rightsReserved}</p>
         </div>
-        <p>{t.rightsReserved}</p>
+        <div className="flex items-center gap-3 text-xs flex-wrap justify-center">
+          <button
+            onClick={() => setActiveTab('privacy-policy')}
+            className="text-purple-400 hover:text-purple-300 font-semibold underline flex items-center gap-1"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Security &amp; Privacy Policy</span>
+          </button>
+          <span>·</span>
+          <a
+            href="/security-privacy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-400 hover:text-white flex items-center gap-1"
+          >
+            <span>HTML Policy &amp; Widget</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+          <span>·</span>
+          <button onClick={() => setActiveTab('terms')} className="text-slate-400 hover:text-white">Terms</button>
+          <span>·</span>
+          <button onClick={() => setActiveTab('guidelines')} className="text-slate-400 hover:text-white">Guidelines</button>
+        </div>
       </footer>
+
+      {/* --- FLOATING SECURITY & PRIVACY GUARDIAN WIDGET BADGE (AVAILABLE ON EVERY PAGE) --- */}
+      {!isFullscreen && (
+        <div className={`fixed z-40 transition-all ${cookieConsentOpen ? 'bottom-28 md:bottom-24 left-4 sm:left-6' : 'bottom-5 left-4 sm:left-6'}`}>
+          <button
+            onClick={() => setShowFloatingSecurityWidget(true)}
+            className="group flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-purple-500/40 hover:border-purple-400 text-white shadow-xl shadow-purple-950/40 hover:shadow-purple-600/25 transition-all text-xs font-bold"
+            title="Open Security & Privacy Guardian Widget"
+          >
+            <div className="w-6 h-6 rounded-lg bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-purple-300 group-hover:scale-105 transition-transform">
+              <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div className="text-left leading-tight">
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <span>Privacy Widget</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              </div>
+              <div className="text-[9px] text-purple-300 font-mono">
+                {ageVerifyStatus?.verified ? '18+ Verified ✓' : 'Zero Recording Active'}
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* --- POPUP PRIVACY GUARDIAN WIDGET MODAL --- */}
+      {showFloatingSecurityWidget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-xl p-4">
+          <div className="w-full max-w-lg p-6 sm:p-7 rounded-3xl bg-slate-900 border border-purple-500/50 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-600/25 border border-purple-500/40 flex items-center justify-center text-purple-300">
+                  <Shield className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <span>OrioLiveCall Privacy Guardian Widget</span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">ACTIVE</span>
+                  </h3>
+                  <p className="text-[10px] text-purple-300">Adult 18+ Certified · WebRTC Zero-Recording Standard</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowFloatingSecurityWidget(false)}
+                className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400">Caller Profile ID</div>
+                <div className="font-bold text-white font-mono">{user.profileId || user.userId}</div>
+                <div className="text-[10px] text-emerald-400">Identity Shielded</div>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400">WebRTC Video Call</div>
+                <div className="font-bold text-emerald-400">Zero Recording</div>
+                <div className="text-[10px] text-slate-400">P2P Encrypted</div>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400">18+ Age Assurance</div>
+                <div className="font-bold text-purple-300">{ageVerifyStatus?.verified ? '18+ Verified' : 'Check Required'}</div>
+                <div className="text-[10px] text-slate-400">Hashed ID Protection</div>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400">Cloud Storage</div>
+                <div className="font-bold text-indigo-300">Firebase Zero-Trust</div>
+                <div className="text-[10px] text-slate-400">Authenticated Access</div>
+              </div>
+            </div>
+
+            {/* Quick Live Toggles in Modal */}
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-purple-500/20 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-white">Show Online Status</div>
+                  <div className="text-[10px] text-slate-400">Control if peers can see when you are active.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateExtendedPrivacy({ showOnlineStatus: !msgPrivacy.showOnlineStatus })}
+                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 ${msgPrivacy.showOnlineStatus ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                >
+                  <div className={`w-5 h-5 rounded-full bg-white transition-transform ${msgPrivacy.showOnlineStatus ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
+                <div>
+                  <div className="font-bold text-white">Appear in Global Friends</div>
+                  <div className="text-[10px] text-slate-400">Public directory discovery toggle.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateExtendedPrivacy({ showInGlobalFriends: !msgPrivacy.showInGlobalFriends })}
+                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 ${msgPrivacy.showInGlobalFriends ? 'bg-purple-600' : 'bg-slate-700'}`}
+                >
+                  <div className={`w-5 h-5 rounded-full bg-white transition-transform ${msgPrivacy.showInGlobalFriends ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <button
+                onClick={async () => {
+                  const code = `<iframe src="${window.location.origin}/security-privacy.html?widget=true" width="100%" height="420" style="border: 1px solid rgba(139,92,246,0.3); border-radius: 20px; background: #05060f;" title="OrioLiveCall Security & Privacy Widget" allow="camera; microphone"></iframe>`;
+                  await navigator.clipboard.writeText(code).catch(() => {});
+                  showToast('Widget iframe embed code copied to clipboard!', 'success');
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600/30 border border-purple-500/50 text-purple-200 text-xs font-bold hover:bg-purple-600/50 flex items-center justify-center gap-1.5"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy Embed Code</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowFloatingSecurityWidget(false);
+                  setActiveTab('privacy-policy');
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+              >
+                <span>Full Security Center</span>
+              </button>
+
+              <a
+                href="/security-privacy.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+                title="Open Standalone HTML Page"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- FLOATING ORIO AI HELP CENTER (VISIBLE ACROSS ALL PAGES, NON-BLOCKING) --- */}
       {!isFullscreen && (
