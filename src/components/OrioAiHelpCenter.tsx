@@ -29,21 +29,19 @@ interface OrioAiHelpCenterProps {
 const QUICK_TOPICS: Record<Language, Array<{ label: string; prompt: string }>> = {
   en: [
     { label: 'Find Profile ID', prompt: 'How do I find, copy, and share my Profile ID?' },
-    { label: 'Create Account', prompt: 'How do I create and verify an 18+ account on OrioLiveCall?' },
-    { label: 'Subscriptions', prompt: 'Explain Monthly & Yearly subscription plans and cancellation rules.' },
-    { label: 'Payment Help', prompt: 'What payment methods are supported and how do I solve payment problems?' },
-    { label: 'Free & Premium Video', prompt: 'Which videos and livestreams are free vs premium?' },
+    { label: '18+ Account & Login', prompt: 'How do I confirm 18+ and sign in with Google on OrioLiveCall?' },
+    { label: 'Free Video Connect', prompt: 'How do free 1-to-1 random video calls and 5+ multiplayer rooms work?' },
+    { label: 'Free Videos & Live', prompt: 'How do I watch free community videos and live rooms?' },
     { label: 'Privacy & Report', prompt: 'How do I change messaging privacy or report an inappropriate user?' },
-    { label: 'Security & Widget', prompt: 'Tell me about the Security & Privacy Policy, WebRTC zero recording, and how to use or embed the Privacy Widget.' },
+    { label: 'Google Cookies & Privacy', prompt: 'Tell me about the Privacy Policy, Google Cookies consent, and WebRTC zero recording.' },
   ],
   bn: [
     { label: 'প্রোফাইল আইডি', prompt: 'আমার Profile ID কোথায় পাবো এবং কিভাবে কপি ও শেয়ার করবো?' },
-    { label: 'অ্যাকাউন্ট তৈরি', prompt: 'কিভাবে Google বা জন্মতারিখ দিয়ে ১৮+ অ্যাকাউন্ট তৈরি করবো?' },
-    { label: 'সাবস্ক্রিপশন প্ল্যান', prompt: 'মাসিক ও বার্ষিক সাবস্ক্রিপশন প্ল্যান এবং বাতিলের নিয়ম কী?' },
-    { label: 'পেমেন্ট সাহায্য', prompt: 'কোন কোন পেমেন্ট মেথড সাপোর্ট করে এবং পেমেন্ট সমস্যা হলে কী করবো?' },
-    { label: 'ফ্রি ও প্রিমিয়াম ভিডিও', prompt: 'কোন ভিডিও ও লাইভস্ট্রিম ফ্রি এবং কোনগুলো প্রিমিয়াম?' },
+    { label: 'অ্যাকাউন্ট ও লগইন', prompt: 'কিভাবে Google দিয়ে সাইন-ইন ও ১৮+ কনফার্ম করবো?' },
+    { label: 'ফ্রি ভিডিও কল', prompt: 'ফ্রি ১-টু-১ ভিডিও কল এবং ৫+ গ্রুপ ভিডিও কল কিভাবে কাজ করে?' },
+    { label: 'ফ্রি ভিডিও ও লাইভ', prompt: 'কিভাবে ফ্রি কমিউনিটি ভিডিও এবং লাইভ রুম দেখবো?' },
     { label: 'প্রাইভেসি ও রিপোর্ট', prompt: 'মেসেজ প্রাইভেসি কিভাবে সেট করবো এবং কিভাবে রিপোর্ট করবো?' },
-    { label: 'নিরাপত্তা ও উইজেট', prompt: 'অরিও লাইভ কলের নিরাপত্তা ও গোপনীয়তা নীতি, জিরো রেকর্ডিং এবং প্রাইভেসি উইজেট সম্পর্কে বলুন।' },
+    { label: 'Google কুকিজ ও প্রাইভেসি', prompt: 'গোপনীয়তা নীতি, Google কুকিজ কনসেন্ট এবং জিরো রেকর্ডিং সম্পর্কে বলুন।' },
   ],
 };
 
@@ -69,8 +67,8 @@ export const OrioAiHelpCenter: React.FC<OrioAiHelpCenterProps> = ({
       role: 'assistant',
       text:
         lang === 'bn'
-          ? `স্বাগতম **Orio AI Help Center**-এ! আমি আপনার অ্যাকাউন্ট, প্রোফাইল আইডি (${userProfileId || 'ORI-100004'}), সাবস্ক্রিপশন, পেমেন্ট মেথড, ফ্রি/প্রিমিয়াম ভিডিও, লাইভস্ট্রিম এবং প্রাইভেসি বিষয়ে বাংলা ও ইংরেজিতে সাহায্য করতে পারি।`
-          : `Hello! I'm **Orio AI Help Center**. Ask me anything in English or বাংলা about your **Profile ID (${userProfileId || 'ORI-100004'})**, account setup, subscriptions, payment methods, free/premium videos, livestreams, or privacy & reports.`,
+          ? `স্বাগতম **Orio AI Help Center**-এ! আমি আপনার অ্যাকাউন্ট, প্রোফাইল আইডি (${userProfileId || 'ORI-100004'}), ফ্রি ভিডিও কল, গ্লোবাল ফ্রেন্ডস, Google কুকিজ এবং প্রাইভেসি বিষয়ে বাংলা ও ইংরেজিতে সাহায্য করতে পারি।`
+          : `Hello! I'm **Orio AI Help Center**. Ask me anything about your **Profile ID (${userProfileId || 'ORI-100004'})**, free video calling, Global Friends, Google Sign-In & Cookies, or Privacy & Reports.`,
       timestamp: new Date().toISOString(),
     },
   ]);

@@ -25,14 +25,12 @@ interface AdminPromoManagerProps {
 }
 
 const TARGET_TAB_OPTIONS: Array<{ value: PromotionTargetTab; label: string }> = [
-  { value: 'chat', label: 'Random Video Chat' },
-  { value: 'videos', label: 'Videos & Search' },
-  { value: 'live', label: 'Free & Premium Live' },
-  { value: 'creators', label: 'Discover Creators' },
-  { value: 'subscriptions', label: 'Subscription Center' },
-  { value: 'payment-methods', label: 'Payment Methods Center' },
+  { value: 'chat', label: 'Free Video Connect' },
+  { value: 'friends', label: 'Global Friends' },
+  { value: 'videos', label: 'Free Videos & Search' },
+  { value: 'live', label: 'Free Live Rooms' },
+  { value: 'creators', label: 'Discover Profiles' },
   { value: 'shorts', label: 'Hot Shorts' },
-  { value: 'gifts', label: 'Gift Shop' },
 ];
 
 const MEDIA_PRESETS = [

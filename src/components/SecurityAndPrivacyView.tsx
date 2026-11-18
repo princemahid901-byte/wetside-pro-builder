@@ -61,10 +61,10 @@ export const SecurityAndPrivacyView: React.FC<SecurityAndPrivacyViewProps> = ({
       subtitle: "Enterprise-grade safety, WebRTC peer-to-peer encryption, zero server video recording, and strict 18+ adult protection.",
       guardianWidget: "Orio Privacy Guardian Widget",
       widgetDesc: "Interactive real-time safety monitor and embeddable badge for your profile and external sites.",
-      adult18Title: "Adult 18+ Verification",
-      adult18Verified: "18+ Adult Verified",
-      adult18Unverified: "Verification Required",
-      adult18Desc: "Server-validated Date of Birth and cryptographic SHA-256 ID hash protection.",
+      adult18Title: "Adult 18+ Confirmation",
+      adult18Verified: "18+ Adult Confirmed",
+      adult18Unverified: "Tickmark Confirmation Required",
+      adult18Desc: "Simple one-click 18+ tickmark confirmation for instant, privacy-first access.",
       webrtcTitle: "WebRTC P2P Video Privacy",
       webrtcStatus: "Zero Server Recording Active",
       webrtcDesc: "All 1-on-1 calls run directly peer-to-peer using DTLS/SRTP encryption. Calls are never recorded or stored on any server.",
@@ -155,6 +155,15 @@ export const SecurityAndPrivacyView: React.FC<SecurityAndPrivacyViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 relative z-10 shrink-0">
+          <a
+            href="/assets/aistudio/privacy_google_free_account_32b46097.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2.5 rounded-xl bg-emerald-600/25 border border-emerald-500/40 text-emerald-200 text-xs font-bold hover:bg-emerald-600/40 transition-all flex items-center gap-1.5 shadow-lg"
+          >
+            <ExternalLink className="w-4 h-4 text-emerald-300" />
+            <span>Google &amp; Free Account Privacy</span>
+          </a>
           <a
             href="/security-privacy.html"
             target="_blank"
@@ -503,7 +512,7 @@ export const SecurityAndPrivacyView: React.FC<SecurityAndPrivacyViewProps> = ({
                   <span>1. 18+ Strict Adult Eligibility Policy (১৮+ বয়স সংক্রান্ত নীতিমালা)</span>
                 </h3>
                 <p>
-                  OrioLiveCall operates exclusively as an adult platform for verified persons aged 18 and older. Any user under 18 is prohibited from creating accounts, accessing live matching queues, or participating in video calls. Age verification utilizes calendar birth dates and hashed identity documents.
+                  OrioLiveCall operates exclusively as an adult platform for users aged 18 and older. Users confirm 18+ eligibility directly via a clear confirmation tickmark before accessing live video or Google sign-in features.
                 </p>
               </div>
 

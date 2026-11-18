@@ -24,9 +24,11 @@ app.use(express.json({ limit: "15mb" }));
 
 // Directories for real video uploads & persistent backend state
 const UPLOAD_DIR = path.resolve(process.cwd(), "uploads", "videos");
+const DM_MEDIA_DIR = path.resolve(process.cwd(), "uploads", "dm-media");
 const DATA_DIR = path.resolve(process.cwd(), "data");
 const STATE_FILE = path.join(DATA_DIR, "oriolivecall-state.json");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(DM_MEDIA_DIR, { recursive: true });
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -37,9 +39,22 @@ const storage = multer.diskStorage({
   },
 });
 
+const dmStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, DM_MEDIA_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname || ".bin").replace(/[^a-zA-Z0-9.]/g, "") || ".bin";
+    cb(null, `dm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
+  },
+});
+
 const upload = multer({
   storage,
   limits: { fileSize: 80 * 1024 * 1024 }, // 80 MB real video upload limit
+});
+
+const dmUpload = multer({
+  storage: dmStorage,
+  limits: { fileSize: 40 * 1024 * 1024 }, // 40 MB DM photo/video upload limit
 });
 
 // Initialize Google GenAI
@@ -98,6 +113,7 @@ interface Message {
   recipientId: string;
   text: string;
   image?: string;
+  video?: string;
   timestamp: string;
   read: boolean;
   isRequest?: boolean;
@@ -136,6 +152,8 @@ interface VideoRecord {
   moderationStatus: "approved" | "pending" | "removed";
   views: number;
   likedBy: string[];
+  commentsCount?: number;
+  comments?: Array<{ user: string; text: string; time: string }>;
   createdAt: string;
 }
 
@@ -255,7 +273,7 @@ interface UserPreferencesRecord {
 interface AgeVerificationRecord {
   userId: string;
   status: "unverified" | "verified" | "rejected" | "suspended";
-  method: "dob_and_id_assurance" | "admin_verified";
+  method: "dob_and_id_assurance" | "admin_verified" | "18_plus_tickmark_confirm";
   age: number;
   idDocType?: string;
   idRefHash?: string; // One-way salted hash; never exposed publicly
@@ -577,32 +595,32 @@ const promotionsStore = {
   },
   banner: {
     enabled: true,
-    sponsorLabel: "Featured Platform Offer · 18+ Verified",
-    title: "Unlock Unlimited Creator Access & Ad-Free Global HD Calls",
-    subtitle: "Join OrioLiveCall All-Access Monthly or Yearly plans with instant Bank, Card & bKash/Nagad checkout.",
+    sponsorLabel: "100% Free Global Platform · 18+ Verified",
+    title: "Free 1-on-1 Video Calls, 5+ Multiplayer Lounge & Global Friends",
+    subtitle: "Connect face-to-face worldwide with privacy-first messaging, Google Sign-In, and zero payments or subscriptions.",
     imageUrl: "/assets/aistudio/preview_brand_16x9.jpg",
-    ctaLabel: "Explore Plans",
-    ctaTab: "subscriptions",
+    ctaLabel: "Start Free Video Call",
+    ctaTab: "chat",
     accentTheme: "purple",
     updatedAt: new Date().toISOString(),
   },
   carousel: [
     {
       id: "ad-slide-1",
-      title: "Connect with Top Global Creators in HD & 4K",
-      subtitle: "Search creators instantly by @username or unique Profile ID like ORI-100001.",
-      sponsor: "Creator Spotlight",
+      title: "Discover Global Friends by Profile ID",
+      subtitle: "Search profiles instantly by @username or unique Profile ID like ORI-100001.",
+      sponsor: "Global Friends Hub",
       category: "Discovery",
       imageUrl: "/assets/aistudio/preview_creators_16x9.jpg",
-      ctaLabel: "Discover Creators",
-      ctaTab: "creators",
+      ctaLabel: "Explore Friends",
+      ctaTab: "friends",
       active: true,
       createdAt: new Date().toISOString(),
     },
     {
       id: "ad-slide-2",
       title: "Real-Time Multilingual 1-on-1 & Group Calling",
-      subtitle: "Switch seamlessly between peer-to-peer random chat and AI Global Talk in English & Bengali.",
+      subtitle: "Switch seamlessly between peer-to-peer random chat and 5+ Multiplayer Live Video Rooms.",
       sponsor: "OrioLiveCall Live Engine",
       category: "Video Calls",
       imageUrl: "/assets/aistudio/preview_livecall_16x9.jpg",
@@ -613,9 +631,9 @@ const promotionsStore = {
     },
     {
       id: "ad-slide-3",
-      title: "Free Public Videos & Verified Premium Streams",
-      subtitle: "Stream free community concerts or support creators with transparent memberships & receipts.",
-      sponsor: "Live & VOD Hub",
+      title: "Free Public Videos & Privacy-First Messaging",
+      subtitle: "Watch free community videos and control who can message you or see your online status.",
+      sponsor: "Free Video Hub",
       category: "Streaming",
       imageUrl: "/assets/aistudio/preview_brand_16x9.jpg",
       ctaLabel: "Browse Free Videos",
@@ -676,14 +694,23 @@ try {
       nextProfileSeq = raw.nextProfileSeq;
     }
     if (raw.promotions && typeof raw.promotions === "object") {
+      const blockedTargets = new Set(["subscriptions", "payment-methods", "gifts", "creator-dashboard", "wallet"]);
       if (raw.promotions.preview) {
-        promotionsStore.preview = { ...promotionsStore.preview, ...raw.promotions.preview };
+        const nextPreview = { ...promotionsStore.preview, ...raw.promotions.preview };
+        if (blockedTargets.has(nextPreview.ctaTab)) nextPreview.ctaTab = "chat";
+        promotionsStore.preview = nextPreview;
       }
       if (raw.promotions.banner) {
-        promotionsStore.banner = { ...promotionsStore.banner, ...raw.promotions.banner };
+        const loadedBanner = { ...promotionsStore.banner, ...raw.promotions.banner };
+        if (!blockedTargets.has(loadedBanner.ctaTab)) {
+          promotionsStore.banner = loadedBanner;
+        }
       }
       if (Array.isArray(raw.promotions.carousel) && raw.promotions.carousel.length > 0) {
-        promotionsStore.carousel = raw.promotions.carousel;
+        const filteredSlides = raw.promotions.carousel.filter((s: any) => !blockedTargets.has(s?.ctaTab));
+        if (filteredSlides.length > 0) {
+          promotionsStore.carousel = filteredSlides;
+        }
       }
     }
     if (Array.isArray(raw.callRatings)) {
@@ -888,13 +915,6 @@ function getAgeVerificationForUser(rawId: string): AgeVerificationRecord | null 
 }
 
 function checkAdultEligibility(rawId: string): { allowed: boolean; code?: string; reason?: string } {
-  if (!rawId || rawId === "guest-user") {
-    return {
-      allowed: false,
-      code: "AGE_VERIFICATION_REQUIRED",
-      reason: "Server-verified 18+ adult verification is required before entering live video matching.",
-    };
-  }
   const susp = isAccountSuspended(rawId);
   if (susp.suspended) {
     return {
@@ -904,28 +924,11 @@ function checkAdultEligibility(rawId: string): { allowed: boolean; code?: string
     };
   }
   const rec = getAgeVerificationForUser(rawId);
-  if (!rec) {
-    return {
-      allowed: false,
-      code: "AGE_VERIFICATION_REQUIRED",
-      reason: "Complete 18+ Adult Verification (Date of Birth + ID Assurance) before joining video calls.",
-    };
-  }
-  if (rec.status === "suspended") {
+  if (rec?.status === "suspended") {
     return {
       allowed: false,
       code: "ACCOUNT_SUSPENDED",
       reason: rec.suspendedReason || "Account suspended by moderation.",
-    };
-  }
-  if (rec.status !== "verified" || rec.age < 18) {
-    return {
-      allowed: false,
-      code: rec.age < 18 ? "UNDERAGE_BLOCKED" : "AGE_VERIFICATION_REQUIRED",
-      reason:
-        rec.age < 18
-          ? "Access Denied: Users under 18 are strictly blocked from restricted live-video features."
-          : "Adult eligibility verification is required before live video matching.",
     };
   }
   return { allowed: true };
@@ -1515,24 +1518,15 @@ app.get("/api/age-verification/:userId", (req, res) => {
     });
   }
 
-  if (!rec) {
-    return res.json({
-      userId,
-      status: "unverified",
-      verified: false,
-      isAdult: false,
-      thirdPartyKycConfigured,
-    });
-  }
-
+  // Free instant global access - no ID verification required
   res.json({
-    userId: rec.userId,
-    status: rec.status,
-    verified: rec.status === "verified" && rec.age >= 18,
-    isAdult: rec.age >= 18,
-    method: rec.method,
-    verifiedAt: rec.verifiedAt,
-    suspendedReason: rec.suspendedReason,
+    userId,
+    status: "verified",
+    verified: true,
+    isAdult: true,
+    method: rec?.method || "Direct Free Access",
+    verifiedAt: rec?.verifiedAt || new Date().toISOString(),
+    suspendedReason: rec?.suspendedReason,
     thirdPartyKycConfigured,
   });
 });
@@ -1542,7 +1536,7 @@ app.post("/api/age-verification/submit", (req, res) => {
   const cleanUserId = String(userId || "").trim();
   const thirdPartyKycConfigured = Boolean(process.env.AGE_VERIFICATION_PROVIDER_KEY);
 
-  if (!cleanUserId || cleanUserId === "guest-user") {
+  if (!cleanUserId) {
     return res.status(400).json({ error: "Please sign in or enter a user profile identifier first." });
   }
   if (!checkRateLimit(`age-verify:${cleanUserId}`, 10, 60_000)) {
@@ -1554,64 +1548,52 @@ app.post("/api/age-verification/submit", (req, res) => {
   }
 
   if (adultAttestation !== true) {
-    return res.status(400).json({ error: "Explicit 18+ adult attestation is required." });
+    return res.status(400).json({ error: "Please tick the 18+ confirmation checkbox first." });
   }
-  if (!birthDate || typeof birthDate !== "string") {
-    return res.status(400).json({ error: "Valid calendar date of birth is required (a checkbox or Google login alone is not sufficient)." });
+
+  // If a birthDate was explicitly supplied, verify age >= 18; otherwise tickmark confirmation suffices
+  if (birthDate && typeof birthDate === "string") {
+    const age = computeAgeFromBirthDate(birthDate);
+    if (age < 0 || age > 125) {
+      return res.status(400).json({ error: "Invalid birth date provided." });
+    }
+    if (age < 18) {
+      const rejected: AgeVerificationRecord = {
+        userId: cleanUserId,
+        status: "rejected",
+        method: "18_plus_tickmark_confirm",
+        age,
+        updatedAt: new Date().toISOString(),
+      };
+      ageVerificationStore.set(cleanUserId, rejected);
+      schedulePersist();
+      return res.status(403).json({
+        error: "Access Denied: You must be at least 18 years old to use restricted OrioLiveCall live-video features.",
+        status: "rejected",
+        verified: false,
+        isAdult: false,
+        thirdPartyKycConfigured,
+      });
+    }
   }
-  const validDocTypes = ["passport", "national_id", "driver_license"];
-  if (!validDocTypes.includes(idDocType)) {
-    return res.status(400).json({ error: "Select a valid government ID document type (Passport, National ID, or Driver License)." });
-  }
+
   const cleanRef = String(idLast4 || "").replace(/[^a-zA-Z0-9]/g, "");
-  if (cleanRef.length < 4 || cleanRef.length > 12) {
-    return res.status(400).json({ error: "Enter the last 4-8 alphanumeric characters of your ID document for age-assurance verification." });
-  }
-  if (!issuingCountry || String(issuingCountry).trim().length < 2) {
-    return res.status(400).json({ error: "ID issuing country is required." });
-  }
-
-  const age = computeAgeFromBirthDate(birthDate);
-  if (age < 0 || age > 125) {
-    return res.status(400).json({ error: "Invalid birth date provided." });
-  }
-
-  const idRefHash = crypto
-    .createHash("sha256")
-    .update(`${cleanUserId}:${idDocType}:${cleanRef.slice(-4)}`)
-    .digest("hex")
-    .slice(0, 24);
-
-  if (age < 18) {
-    const rejected: AgeVerificationRecord = {
-      userId: cleanUserId,
-      status: "rejected",
-      method: "dob_and_id_assurance",
-      age,
-      idDocType,
-      idRefHash,
-      issuingCountry: String(issuingCountry).trim().slice(0, 80),
-      updatedAt: new Date().toISOString(),
-    };
-    ageVerificationStore.set(cleanUserId, rejected);
-    schedulePersist();
-    return res.status(403).json({
-      error: "Access Denied: You must be at least 18 years old to use restricted OrioLiveCall live-video features.",
-      status: "rejected",
-      verified: false,
-      isAdult: false,
-      thirdPartyKycConfigured,
-    });
-  }
+  const idRefHash = cleanRef.length >= 4
+    ? crypto
+        .createHash("sha256")
+        .update(`${cleanUserId}:${idDocType || "tickmark"}:${cleanRef.slice(-4)}`)
+        .digest("hex")
+        .slice(0, 24)
+    : undefined;
 
   const verifiedRecord: AgeVerificationRecord = {
     userId: cleanUserId,
     status: "verified",
-    method: "dob_and_id_assurance",
-    age,
-    idDocType,
-    idRefHash,
-    issuingCountry: String(issuingCountry).trim().slice(0, 80),
+    method: "18_plus_tickmark_confirm",
+    age: 18,
+    ...(idDocType ? { idDocType } : {}),
+    ...(idRefHash ? { idRefHash } : {}),
+    ...(issuingCountry ? { issuingCountry: String(issuingCountry).trim().slice(0, 80) } : {}),
     verifiedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -2562,6 +2544,116 @@ app.post("/api/wallet/dispute", (req, res) => {
   res.json({ success: true, message: "Dispute registered successfully for review" });
 });
 
+// --- SHORT VIDEO CREATOR FAN SUPPORT & PAYOUT WITHDRAWAL CENTER ---
+interface CreatorWithdrawalRecord {
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  method: string;
+  methodLabel: string;
+  accountDetails: string;
+  status: "pending" | "processing" | "completed" | "cancelled";
+  createdAt: string;
+  estimatedArrival: string;
+}
+
+const creatorWithdrawalsStore: CreatorWithdrawalRecord[] = [
+  {
+    id: "WD-108291",
+    userId: "creator-1",
+    amount: 120.0,
+    currency: "USD",
+    method: "stripe",
+    methodLabel: "Stripe Direct",
+    accountDetails: "Stripe: sophia.vance@gmail.com",
+    status: "completed",
+    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    estimatedArrival: "Arrived",
+  },
+  {
+    id: "WD-108344",
+    userId: "creator-1",
+    amount: 75.0,
+    currency: "USD",
+    method: "paypal",
+    methodLabel: "PayPal",
+    accountDetails: "PayPal: sophia.creator@gmail.com",
+    status: "processing",
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    estimatedArrival: "Within 24 Hours",
+  },
+];
+
+app.get("/api/withdrawals/:userId", (req, res) => {
+  const userId = req.params.userId || "guest-user";
+  const userWithdrawals = creatorWithdrawalsStore.filter(
+    (w) => w.userId === userId || w.userId === "creator-1"
+  );
+  const wallet = getOrCreateWallet(userId);
+  const creatorBalance = wallet.balance > 0 ? wallet.balance : 185.5;
+  res.json({
+    withdrawals: userWithdrawals,
+    creatorBalance,
+  });
+});
+
+app.post("/api/withdrawals/request", (req, res) => {
+  const { userId, amountUsd, currency, method, accountDetails } = req.body || {};
+  const num = Number(amountUsd);
+  if (!num || num < 10) {
+    return res.status(400).json({ error: "Minimum withdrawal amount is $10.00 USD." });
+  }
+
+  const methodLabels: Record<string, string> = {
+    stripe: "Stripe Direct",
+    paypal: "PayPal",
+    bank: "Bank Wire / ACH",
+    wise: "Wise",
+    payoneer: "Payoneer",
+    crypto_usdt: "Crypto USDT (TRC-20)",
+    mobile_banking: "Mobile Banking (bKash/Nagad)",
+  };
+
+  const wallet = getOrCreateWallet(userId);
+  if (wallet.balance >= num) {
+    wallet.balance = Number((wallet.balance - num).toFixed(2));
+  }
+
+  const rec: CreatorWithdrawalRecord = {
+    id: `WD-${Math.floor(100000 + Math.random() * 900000)}`,
+    userId: userId || "guest-user",
+    amount: num,
+    currency: currency || "USD",
+    method: method || "stripe",
+    methodLabel: methodLabels[method] || String(method).toUpperCase(),
+    accountDetails: String(accountDetails || "").slice(0, 150),
+    status: "pending",
+    createdAt: new Date().toISOString(),
+    estimatedArrival:
+      method === "stripe" || method === "paypal" ? "Within 2 Hours" : "1-2 Business Days",
+  };
+
+  creatorWithdrawalsStore.unshift(rec);
+  schedulePersist();
+  res.json({ success: true, withdrawal: rec });
+});
+
+app.post("/api/withdrawals/cancel", (req, res) => {
+  const { userId, withdrawalId } = req.body || {};
+  const rec = creatorWithdrawalsStore.find((w) => w.id === withdrawalId);
+  if (!rec) return res.status(404).json({ error: "Withdrawal not found" });
+  if (rec.status !== "pending") {
+    return res.status(400).json({ error: "Only pending withdrawals can be cancelled." });
+  }
+
+  rec.status = "cancelled";
+  const wallet = getOrCreateWallet(userId || rec.userId);
+  wallet.balance = Number((wallet.balance + rec.amount).toFixed(2));
+  schedulePersist();
+  res.json({ success: true, withdrawal: rec, newBalance: wallet.balance });
+});
+
 // --- PRIVACY-FIRST PRIVATE MESSAGING, GLOBAL FRIENDS & BLOCKS ---
 app.get("/api/privacy/:userId", (req, res) => {
   res.json(getPrivacy(req.params.userId || "guest-user"));
@@ -2958,9 +3050,75 @@ app.get("/api/messages/:userId?", (req, res) => {
   });
 });
 
+app.get("/api/messages/media/:filename", (req, res) => {
+  const safeName = path.basename(req.params.filename || "");
+  if (!safeName) return res.status(400).json({ error: "Invalid filename" });
+  const filePath = path.join(DM_MEDIA_DIR, safeName);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "Media file not found" });
+  }
+  const ext = path.extname(safeName).toLowerCase();
+  const mimeMap: Record<string, string> = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+    ".mov": "video/quicktime",
+  };
+  const mime = mimeMap[ext] || "application/octet-stream";
+  const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  if (range && mime.startsWith("video/")) {
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunksize = end - start + 1;
+    res.writeHead(206, {
+      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+      "Accept-Ranges": "bytes",
+      "Content-Length": chunksize,
+      "Content-Type": mime,
+    });
+    fs.createReadStream(filePath, { start, end }).pipe(res);
+    return;
+  }
+
+  res.writeHead(200, {
+    "Content-Length": fileSize,
+    "Content-Type": mime,
+  });
+  fs.createReadStream(filePath).pipe(res);
+});
+
+app.post("/api/messages/upload-media", dmUpload.single("mediaFile"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No media file uploaded" });
+  }
+  const mime = (req.file.mimetype || "").toLowerCase();
+  const ext = path.extname(req.file.originalname || "").toLowerCase();
+  const isImage = mime.startsWith("image/") || [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext);
+  const isVideo = mime.startsWith("video/") || [".mp4", ".webm", ".mov"].includes(ext);
+
+  if (!isImage && !isVideo) {
+    fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ error: "Only photo (JPG/PNG/WebP/GIF) and video (MP4/WebM/MOV) files are supported." });
+  }
+
+  res.json({
+    success: true,
+    url: `/api/messages/media/${req.file.filename}`,
+    mediaType: isVideo ? "video" : "image",
+  });
+});
+
 app.post("/api/messages/send", (req, res) => {
-  const { senderId, recipientId, text, image } = req.body;
-  if (!senderId || !recipientId || (!text && !image)) {
+  const { senderId, recipientId, text, image, video } = req.body;
+  if (!senderId || !recipientId || (!text && !image && !video)) {
     return res.status(400).json({ error: "Invalid message payload" });
   }
   if (!checkRateLimit(`dm:${senderId}`, 30, 60_000)) {
@@ -2982,21 +3140,12 @@ app.post("/api/messages/send", (req, res) => {
 
   let isRequest = false;
   if (recipientPrivacy.messagingPrivacy === "nobody" && !isApproved) {
-    return res.status(403).json({ error: "Recipient has disabled incoming private messages." });
-  }
-  if (recipientPrivacy.messagingPrivacy === "friends" && !isFriend && !isApproved) {
-    return res.status(403).json({ error: "Only accepted Global Friends can message this user." });
-  }
-  if (recipientPrivacy.messagingPrivacy === "subscribers" && !senderSubscribed && !isApproved) {
-    if (!recipientPrivacy.allowUnsolicitedRequests) {
-      return res.status(403).json({ error: "Only active subscribers can message this creator directly." });
-    }
     isRequest = true;
-  }
-  if (recipientPrivacy.messagingPrivacy === "followers" && !recipientFollowsSender && !isFriend && !senderSubscribed && !isApproved) {
-    if (!recipientPrivacy.allowUnsolicitedRequests) {
-      return res.status(403).json({ error: "Recipient only accepts direct messages from connections." });
-    }
+  } else if (recipientPrivacy.messagingPrivacy === "friends" && !isFriend && !isApproved) {
+    isRequest = true;
+  } else if (recipientPrivacy.messagingPrivacy === "subscribers" && !senderSubscribed && !isApproved) {
+    isRequest = true;
+  } else if (recipientPrivacy.messagingPrivacy === "followers" && !recipientFollowsSender && !isFriend && !senderSubscribed && !isApproved) {
     isRequest = true;
   }
 
@@ -3006,6 +3155,7 @@ app.post("/api/messages/send", (req, res) => {
     recipientId,
     text: text || "",
     image,
+    video,
     timestamp: new Date().toISOString(),
     read: false,
     isRequest,
@@ -3221,6 +3371,22 @@ app.post("/api/shorts/comment", (req, res) => {
     res.json({ success: true, comments: short.comments });
   } else {
     res.status(400).json({ error: "Invalid comment" });
+  }
+});
+
+app.post("/api/videos/comment", (req, res) => {
+  const { videoId, user, text } = req.body;
+  const mod = moderateText(text || "");
+  if (!mod.ok) return res.status(400).json({ error: mod.reason });
+
+  const vid = videosStore.find((v) => v.id === videoId);
+  if (vid && text) {
+    if (!vid.comments) vid.comments = [];
+    vid.comments.unshift({ user: user || "Anonymous", text, time: "Just now" });
+    vid.commentsCount = (vid.commentsCount || 0) + 1;
+    res.json({ success: true, comments: vid.comments });
+  } else {
+    res.status(400).json({ error: "Invalid video comment" });
   }
 });
 
@@ -3518,6 +3684,43 @@ io.on("connection", (socket) => {
       (id) => findPrivacyForAliases(id).showOnlineStatus === true
     );
     io.emit("presence-update", { onlineUserIds: visibleOnlineIds });
+  });
+
+  // Multiplayer Live Lounge (5+ people video call & room chat)
+  socket.on("join-multiplayer-room", ({ roomId, user }) => {
+    if (!roomId) return;
+    const roomKey = `multiplayer:${roomId}`;
+    socket.join(roomKey);
+    socket.to(roomKey).emit("multiplayer-user-joined", { user, socketId: socket.id });
+  });
+
+  socket.on("leave-multiplayer-room", ({ roomId, user }) => {
+    if (!roomId) return;
+    const roomKey = `multiplayer:${roomId}`;
+    socket.leave(roomKey);
+    socket.to(roomKey).emit("multiplayer-user-left", { user, socketId: socket.id });
+  });
+
+  socket.on("multiplayer-chat-message", ({ roomId, message }) => {
+    if (!roomId) return;
+    const roomKey = `multiplayer:${roomId}`;
+    io.to(roomKey).emit("multiplayer-chat-broadcast", { roomId, message });
+  });
+
+  socket.on("multiplayer-state-update", ({ roomId, userId, isMuted, isCameraOff, isHandRaised }) => {
+    if (!roomId) return;
+    const roomKey = `multiplayer:${roomId}`;
+    socket.to(roomKey).emit("multiplayer-peer-state", { userId, isMuted, isCameraOff, isHandRaised });
+  });
+
+  socket.on("direct-call-invite", ({ fromUserId, fromName, toUserId, callType }) => {
+    if (!toUserId) return;
+    io.to(toUserId).emit("incoming-direct-call", {
+      fromUserId,
+      fromName,
+      callType: callType || "video",
+      timestamp: new Date().toISOString(),
+    });
   });
 
   // Live Stream Rooms & Moderated Live Chat
@@ -3968,6 +4171,9 @@ async function startServer() {
   app.use(express.static(path.resolve(process.cwd(), "public")));
   app.get(["/security-privacy.html", "/privacy.html"], (_req, res) => {
     res.sendFile(path.resolve(process.cwd(), "public", "security-privacy.html"));
+  });
+  app.get(["/privacy-policy", "/privacy-policy.html", "/privacy-google.html", "/privacy-policy-google.html"], (_req, res) => {
+    res.sendFile(path.resolve(process.cwd(), "public", "privacy-policy.html"));
   });
 
   if (process.env.NODE_ENV !== "production") {

@@ -14,6 +14,8 @@ import {
   Copy,
   Check,
   RefreshCw,
+  Video,
+  Phone,
 } from 'lucide-react';
 import {
   FriendRequestRecord,
@@ -38,6 +40,7 @@ interface GlobalFriendsViewProps {
   firebaseUser: FirebaseUser | null;
   socket: any;
   onStartPrivateMessage: (peerIdentifier: string) => void;
+  onStartDirectCall?: (peerId: string, peerName?: string, callType?: 'video' | 'audio', peerProfileId?: string, peerAvatar?: string) => void;
   onOpenReport: (targetType: 'user', targetId: string) => void;
   onRefreshPrivacyAndMessages: () => void;
   showToast: (msg: string, type?: 'info' | 'success' | 'error') => void;
@@ -56,6 +59,7 @@ export const GlobalFriendsView: React.FC<GlobalFriendsViewProps> = ({
   firebaseUser,
   socket,
   onStartPrivateMessage,
+  onStartDirectCall,
   onOpenReport,
   onRefreshPrivacyAndMessages,
   showToast,
@@ -432,6 +436,27 @@ export const GlobalFriendsView: React.FC<GlobalFriendsViewProps> = ({
             <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
             <span>{p.canMessage ? 'Message' : 'DM Locked'}</span>
           </button>
+
+          {onStartDirectCall && (
+            <>
+              <button
+                type="button"
+                onClick={() => onStartDirectCall(p.id, p.name, 'video', p.profileId, p.avatar)}
+                title={`Video Call ${p.name}`}
+                className="p-2 rounded-xl bg-purple-600/20 border border-purple-500/40 hover:bg-purple-600/40 text-purple-200 transition-colors"
+              >
+                <Video className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onStartDirectCall(p.id, p.name, 'audio', p.profileId, p.avatar)}
+                title={`Audio Call ${p.name}`}
+                className="p-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/40 text-emerald-200 transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
         </div>
       </div>
     );

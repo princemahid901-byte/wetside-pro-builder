@@ -13,7 +13,7 @@ import {
   Wand2, Flame, Share2, MessageCircle, Plus, Camera, Radio,
   Gift, Crown, ShieldCheck, RefreshCcw as RefreshIcon, Sliders, Bell,
   Home, Compass, ShieldAlert, BarChart3, HelpCircle as HelpIcon, Cookie, Bot, PhoneCall,
-  WifiOff, Activity, Play, Flag, Search, Copy, Check, CreditCard, ExternalLink, Ban, UserPlus
+  WifiOff, Activity, Play, Flag, Search, Copy, Check, CreditCard, ExternalLink, Ban, UserPlus, MonitorUp
 } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 import {
@@ -38,16 +38,18 @@ import {
 } from './firebase';
 import { VideoDiscoveryWatch } from './components/VideoDiscoveryWatch';
 import { LiveStreamsHub } from './components/LiveStreamsHub';
-import { CreatorDashboardView } from './components/CreatorDashboardView';
 import { MessagingAndPrivacyView } from './components/MessagingAndPrivacyView';
 import { GlobalFriendsView } from './components/GlobalFriendsView';
 import { OrioAiHelpCenter } from './components/OrioAiHelpCenter';
-import { SubscriptionCenterView } from './components/SubscriptionCenterView';
-import { PaymentMethodsCenterView } from './components/PaymentMethodsCenterView';
 import { HomepageShowcaseSection } from './components/HomepageShowcaseSection';
+import { ReferenceLoginScreen, ReferenceLoginStartPayload } from './components/ReferenceLoginScreen';
 import { AdminPromoManager } from './components/AdminPromoManager';
 import { PostCallRatingModal } from './components/PostCallRatingModal';
 import { SecurityAndPrivacyView } from './components/SecurityAndPrivacyView';
+import { InstagramVideoCallingModal, CallSessionInfo } from './components/InstagramVideoCallingModal';
+import { MultiplayerLiveLounge } from './components/MultiplayerLiveLounge';
+import { GoogleCookiesNotification } from './components/GoogleCookiesNotification';
+import { playCookieAcceptSound, playCookieDeclineSound } from './utils/soundEffects';
 import {
   SubscriptionItem,
   VideoFeedItem,
@@ -128,6 +130,7 @@ interface MessageItem {
   recipientId: string;
   text: string;
   image?: string;
+  video?: string;
   timestamp: string;
   read: boolean;
 }
@@ -225,10 +228,20 @@ export default function App() {
   const [cookieConsentOpen, setCookieConsentOpen] = useState(() => {
     return !localStorage.getItem('oriolivecall_cookie_consent');
   });
+  const [cookieConsentStatus, setCookieConsentStatus] = useState<'accepted' | 'rejected' | null>(() => {
+    const saved = localStorage.getItem('oriolivecall_cookie_consent');
+    return saved === 'accepted' || saved === 'rejected' ? saved : null;
+  });
   const [cookie18Checked, setCookie18Checked] = useState(() => {
     return localStorage.getItem('oriolivecall_age18_confirmed') === 'true';
   });
-  const [google18Checked, setGoogle18Checked] = useState(true);
+  const [guidelinesAgreed, setGuidelinesAgreed] = useState(() => {
+    return localStorage.getItem('oriolivecall_guidelines_agreed') === 'true';
+  });
+  const [google18Checked, setGoogle18Checked] = useState(() => {
+    return localStorage.getItem('oriolivecall_age18_confirmed') === 'true';
+  });
+  const [showReferenceLoginModal, setShowReferenceLoginModal] = useState(false);
 
   // Browser Notifications State
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -237,10 +250,10 @@ export default function App() {
     { id: 'notif-2', title: 'Sophia Vance started a live stream in Tokyo.', time: '5m ago', read: false }
   ]);
 
-  // Initialize user & auth state from localStorage for persistence
+  // Initialize user & auth state from localStorage for persistence (direct open access, no forced signup)
   const [authStep, setAuthStep] = useState<'welcome' | 'signin' | 'signup' | 'age-verify' | 'profile-setup' | 'authenticated'>(() => {
     const savedAuth = localStorage.getItem('oriolivecall_auth');
-    return (savedAuth as any) || 'welcome';
+    return (savedAuth as any) || 'authenticated';
   });
 
   const [user, setUser] = useState<UserProfile>(() => {
@@ -432,7 +445,17 @@ export default function App() {
   });
   const [myFriendsList, setMyFriendsList] = useState<GlobalFriendProfile[]>([]);
   const [selectedDmPeer, setSelectedDmPeer] = useState<string | null>(null);
-  const [ageVerifyStatus, setAgeVerifyStatus] = useState<AgeVerificationPublicStatus | null>(null);
+  const [ageVerifyStatus, setAgeVerifyStatus] = useState<AgeVerificationPublicStatus | null>({
+    userId: 'current-user',
+    status: 'verified',
+    verified: true,
+    isAdult: true,
+    method: 'Direct Free Access',
+    verifiedAt: new Date().toISOString(),
+    thirdPartyKycConfigured: false,
+  });
+  const [showInstagramCamera, setShowInstagramCamera] = useState(false);
+  const [activeInstagramCall, setActiveInstagramCall] = useState<CallSessionInfo | null>(null);
   const [ageModalOpen, setAgeModalOpen] = useState(false);
   const [verifyDobInput, setVerifyDobInput] = useState('');
   const [verifyDocType, setVerifyDocType] = useState<'passport' | 'national_id' | 'driver_license'>('national_id');
@@ -475,32 +498,32 @@ export default function App() {
     },
     banner: {
       enabled: true,
-      sponsorLabel: 'Featured Platform Offer · 18+ Verified',
-      title: 'Unlock Unlimited Creator Access & Ad-Free Global HD Calls',
-      subtitle: 'Join OrioLiveCall All-Access Monthly or Yearly plans with instant Bank, Card & bKash/Nagad checkout.',
+      sponsorLabel: '100% Free Global Calling · 18+ Verified',
+      title: 'Connect Face-to-Face Worldwide — Free Video Calls & Global Friends',
+      subtitle: 'Enjoy 1-on-1 random video chat, 5+ multiplayer live video rooms, and privacy-first messaging with zero payments or subscriptions.',
       imageUrl: '/assets/aistudio/preview_brand_16x9.jpg',
-      ctaLabel: 'Explore Plans',
-      ctaTab: 'subscriptions',
+      ctaLabel: 'Start Free Video Call',
+      ctaTab: 'chat',
       accentTheme: 'purple',
       updatedAt: new Date().toISOString(),
     },
     carousel: [
       {
         id: 'ad-slide-1',
-        title: 'Connect with Top Global Creators in HD & 4K',
-        subtitle: 'Search creators instantly by @username or unique Profile ID like ORI-100001.',
-        sponsor: 'Creator Spotlight',
+        title: 'Discover Global Friends by Profile ID',
+        subtitle: 'Search verified profiles by @username or unique Profile ID like ORI-100001 and chat privately.',
+        sponsor: 'Global Friends Hub',
         category: 'Discovery',
         imageUrl: '/assets/aistudio/preview_creators_16x9.jpg',
-        ctaLabel: 'Discover Creators',
-        ctaTab: 'creators',
+        ctaLabel: 'Explore Friends',
+        ctaTab: 'friends',
         active: true,
         createdAt: new Date().toISOString(),
       },
       {
         id: 'ad-slide-2',
-        title: 'Real-Time Multilingual 1-on-1 & Group Calling',
-        subtitle: 'Switch seamlessly between peer-to-peer random chat and AI Global Talk in English & Bengali.',
+        title: 'Real-Time 1-on-1 & 5+ Multiplayer Video Calls',
+        subtitle: 'Switch seamlessly between peer-to-peer random chat, group rooms, and AI Global Talk.',
         sponsor: 'OrioLiveCall Live Engine',
         category: 'Video Calls',
         imageUrl: '/assets/aistudio/preview_livecall_16x9.jpg',
@@ -962,10 +985,10 @@ export default function App() {
       anyGender: "Any Gender / যেকোনো লিঙ্গ",
       selectCountry: "Country Preference:",
       allCountries: "All Countries (Worldwide)",
-      ageCheckTitle: "Adult Verification (18+ Required)",
-      ageCheckDesc: "OrioLiveCall is a strict adults-only global platform. Please select your exact Date of Birth from the calendar below.",
-      birthDateLabel: "Date of Birth (Calendar Style)",
-      verifyBtn: "Verify & Enter",
+      ageCheckTitle: "Adult Confirmation (18+ Only)",
+      ageCheckDesc: "OrioLiveCall is an adults-only global platform. Please click the 18+ tickmark below to confirm your age and enter.",
+      birthDateLabel: "18+ Age Confirmation",
+      verifyBtn: "Confirm 18+ & Continue",
       underageError: "Access Denied: You must be at least 18 years old to use OrioLiveCall.",
       googleSignIn: "Continue with Google (Firebase Auth)",
       emailLabel: "Email Address",
@@ -1079,10 +1102,12 @@ export default function App() {
       setUser(googleUser);
       setAuthStep('authenticated');
       await syncUserToFirestore(fbUser, googleUser);
-      showToast(`Signed in with Google Firebase! Complete 18+ Adult Verification before live calls.`, 'success');
+      localStorage.setItem('oriolivecall_age18_confirmed', 'true');
+      setCookie18Checked(true);
+      showToast('Signed in with Google Firebase & 18+ confirmed!', 'success');
     } catch (err: any) {
       console.error('Google Firebase Sign-In error:', err);
-      showToast(err?.message || 'Google sign-in popup was cancelled or blocked. Please allow popups or register with Calendar DOB.', 'error');
+      showToast(err?.message || 'Google sign-in popup was cancelled or blocked. Please allow popups or confirm 18+ tickmark to continue.', 'error');
     } finally {
       setAuthLoading(false);
     }
@@ -1204,6 +1229,60 @@ export default function App() {
         await requestCameraPermission(videoQuality, selectedCameraId, selectedMicId, isCameraOn, true);
       }
       showToast('Microphone unmuted', 'success');
+    }
+  };
+
+  const [isScreenSharingInCall, setIsScreenSharingInCall] = useState(false);
+  const screenShareStreamRef = useRef<MediaStream | null>(null);
+
+  const stopScreenShareInCall = async () => {
+    if (screenShareStreamRef.current) {
+      screenShareStreamRef.current.getTracks().forEach((t) => t.stop());
+      screenShareStreamRef.current = null;
+    }
+    setIsScreenSharingInCall(false);
+    if (isCameraOn) {
+      await requestCameraPermission(videoQuality, selectedCameraId, selectedMicId, true, isMicOn);
+    } else if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+    showToast('Stopped screen sharing.', 'info');
+  };
+
+  const toggleScreenShareInCall = async () => {
+    if (isScreenSharingInCall) {
+      await stopScreenShareInCall();
+      return;
+    }
+    try {
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
+      const screenTrack = displayStream.getVideoTracks()[0];
+      if (!screenTrack) return;
+
+      screenShareStreamRef.current = displayStream;
+      setIsScreenSharingInCall(true);
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = displayStream;
+      }
+      if (pcRef.current) {
+        const videoSender = pcRef.current.getSenders().find((s) => s.track?.kind === 'video');
+        if (videoSender) {
+          await videoSender.replaceTrack(screenTrack);
+        } else {
+          pcRef.current.addTrack(screenTrack, displayStream);
+        }
+      }
+
+      screenTrack.onended = () => {
+        stopScreenShareInCall();
+      };
+      showToast('Screen sharing started in call!', 'success');
+    } catch {
+      showToast('Screen sharing cancelled or blocked by browser.', 'info');
     }
   };
 
@@ -1460,6 +1539,10 @@ export default function App() {
 
   const handleSubmitServerAgeVerification = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!verifyAttestation) {
+      showToast('Please click the 18+ confirmation tickmark first.', 'error');
+      return;
+    }
     const myId = user.email || user.userId || 'guest-user';
     setVerifySubmitting(true);
     try {
@@ -1468,36 +1551,31 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: myId,
-          birthDate: verifyDobInput,
-          idDocType: verifyDocType,
-          idLast4: verifyIdLast4,
-          issuingCountry: verifyCountry,
-          adultAttestation: verifyAttestation,
+          adultAttestation: true,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        showToast(data.error || 'Adult 18+ verification denied.', 'error');
+        showToast(data.error || 'Adult 18+ confirmation could not be saved.', 'error');
         fetchAgeVerificationStatus();
         return;
       }
+      localStorage.setItem('oriolivecall_age18_confirmed', 'true');
+      setGoogle18Checked(true);
+      setCookie18Checked(true);
       setAgeVerifyStatus(data);
-      setUser((prev) => ({ ...prev, verified: true, birthDate: verifyDobInput }));
+      setUser((prev) => ({ ...prev, verified: true, age: prev.age && prev.age >= 18 ? prev.age : 18 }));
       if (firebaseUser) {
-        const birth = new Date(verifyDobInput);
-        const calcAge = Math.max(18, new Date().getFullYear() - birth.getFullYear());
         syncAgeVerificationToFirestore(firebaseUser, {
           status: 'verified',
-          method: data.method || 'dob_and_id_assurance',
-          age: calcAge,
-          idDocType: verifyDocType,
-          issuingCountry: verifyCountry,
+          method: data.method || '18_plus_tickmark_confirm',
+          age: 18,
         }).catch(() => {});
       }
       setAgeModalOpen(false);
-      showToast('18+ Adult Verification confirmed! You can now start free video calls.', 'success');
+      showToast('18+ Adult Confirmation saved! You can now start free video calls.', 'success');
     } catch {
-      showToast('Network error verifying adult eligibility.', 'error');
+      showToast('Network error confirming 18+ eligibility.', 'error');
     } finally {
       setVerifySubmitting(false);
     }
@@ -2054,28 +2132,36 @@ export default function App() {
     }
   };
 
-  const startMatching = async () => {
+  const startMatchingWithOverrides = async (overrides?: {
+    name?: string;
+    gender?: 'girls' | 'boys' | 'other';
+    targetGender?: 'girls' | 'boys' | 'any';
+    callMode?: 'video' | 'audio';
+  }) => {
     if (!socket) return;
-    if (authStep !== 'authenticated') {
-      setAuthStep('signin');
-      return;
-    }
-    if (!ageVerifyStatus?.verified) {
-      setAgeModalOpen(true);
-      showToast('Server 18+ Adult Verification is required before starting live video calls.', 'info');
-      return;
-    }
+    setAuthStep('authenticated');
+    // Direct access: only Name, Years (Age), and Gender needed — no signup or 18+ confirm gate required
+
+    const activeName = overrides?.name || user.name || 'Guest User';
+    const activeGender = overrides?.gender || user.gender;
+    const activeTargetGender = overrides?.targetGender || preferences.targetGender;
+    const wantVideo = overrides?.callMode !== 'audio';
 
     // Explicit Camera & Microphone permission check BEFORE joining queue
     let activeStream = streamRef.current;
     const hasLiveTrack = activeStream?.getTracks().some((tr) => tr.readyState === 'live');
-    if (!activeStream || !hasLiveTrack) {
-      activeStream = await requestCameraPermission(videoQuality, selectedCameraId, selectedMicId, true, true);
+    if (!activeStream || !hasLiveTrack || (!wantVideo && isCameraOn) || (wantVideo && !isCameraOn)) {
+      activeStream = await requestCameraPermission(videoQuality, selectedCameraId, selectedMicId, wantVideo, true);
       if (!activeStream) {
-        showToast('Camera & microphone permission is required before entering video matching.', 'error');
+        showToast(
+          wantVideo
+            ? 'Camera & microphone permission is required for video calling.'
+            : 'Microphone permission is required for audio calling.',
+          'error'
+        );
         return;
       }
-      setIsCameraOn(true);
+      setIsCameraOn(wantVideo);
       setIsMicOn(true);
     }
 
@@ -2087,17 +2173,17 @@ export default function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        targetGender: preferences.targetGender,
+        targetGender: activeTargetGender,
         targetCountry: preferences.targetCountry,
-        voluntaryGender: user.gender,
+        voluntaryGender: activeGender,
         preferredQuality: videoQuality,
       }),
     }).catch(() => {});
     if (firebaseUser) {
       syncUserPreferencesToFirestore(firebaseUser, {
-        targetGender: preferences.targetGender,
+        targetGender: activeTargetGender,
         targetCountry: preferences.targetCountry,
-        voluntaryGender: user.gender,
+        voluntaryGender: activeGender,
         preferredQuality: videoQuality,
       }).catch(() => {});
     }
@@ -2107,13 +2193,17 @@ export default function App() {
     socket.emit("join-queue", {
       userId: myId,
       profileId: user.profileId,
-      name: user.name || "Adult User",
-      gender: user.gender,
+      name: activeName,
+      gender: activeGender,
       country: user.country,
-      targetGender: preferences.targetGender,
+      targetGender: activeTargetGender,
       targetCountry: preferences.targetCountry,
       mediaReady: true,
     });
+  };
+
+  const startMatching = () => {
+    startMatchingWithOverrides();
   };
 
   const handleRespondToMatchProposal = (accept: boolean) => {
@@ -2287,27 +2377,13 @@ export default function App() {
 
   const verifyAgeWithCalendar = () => {
     if (!ageLicenseAgreed) {
-      showToast("Please confirm you are 18+ and accept the License & Safety Disclaimer.", 'error');
+      showToast("Please click the 18+ confirmation tickmark first.", 'error');
       return;
     }
-    if (!birthDateInput) {
-      showToast("Please select your date of birth.", 'error');
-      return;
-    }
-    const birthDateObj = new Date(birthDateInput);
-    const today = new Date();
-    let age = today.getFullYear() - birthDateObj.getFullYear();
-    const m = today.getMonth() - birthDateObj.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
-      age--;
-    }
-
-    if (isNaN(age) || age < 18) {
-      showToast(t.underageError, 'error');
-      return;
-    }
-
-    setUser(prev => ({ ...prev, birthDate: birthDateInput, age, verified: true }));
+    localStorage.setItem('oriolivecall_age18_confirmed', 'true');
+    setGoogle18Checked(true);
+    setCookie18Checked(true);
+    setUser(prev => ({ ...prev, age: prev.age && prev.age >= 18 ? prev.age : 18, verified: true }));
     setAuthStep('profile-setup');
   };
 
@@ -2476,6 +2552,74 @@ export default function App() {
     showToast('Logged out successfully.', 'info');
   };
 
+  const handleAcceptGoogleCookies = () => {
+    localStorage.setItem('oriolivecall_cookie_consent', 'accepted');
+    localStorage.setItem('oriolivecall_age18_confirmed', 'true');
+    localStorage.setItem('oriolivecall_guidelines_agreed', 'true');
+    setCookie18Checked(true);
+    setGoogle18Checked(true);
+    setAgeLicenseAgreed(true);
+    setGuidelinesAgreed(true);
+    setCookieConsentStatus('accepted');
+    setCookieConsentOpen(false);
+    playCookieAcceptSound();
+    showToast('Accepted: 18+ age confirmed, Website Guidelines & Google Cookies saved.', 'success');
+  };
+
+  const handleEssentialOnlyCookies = () => {
+    localStorage.setItem('oriolivecall_cookie_consent', 'rejected');
+    setCookieConsentStatus('rejected');
+    setCookieConsentOpen(false);
+    playCookieDeclineSound();
+    showToast('Declined Google Cookies & Guidelines consent. Essential mode active.', 'info');
+  };
+
+  const handleResetCookies = () => {
+    localStorage.removeItem('oriolivecall_cookie_consent');
+    setCookieConsentStatus(null);
+    setCookieConsentOpen(true);
+    showToast('Google Cookies & Auth notification opened.', 'info');
+  };
+
+  const handleStartReferenceChat = (payload: ReferenceLoginStartPayload) => {
+    const mappedGender: 'girls' | 'boys' | 'other' =
+      payload.userGender === 'female' ? 'girls' : payload.userGender === 'other' ? 'other' : 'boys';
+    const hasFemale = payload.targetPrefs.includes('females');
+    const hasMale = payload.targetPrefs.includes('males');
+    const hasEveryone =
+      payload.targetPrefs.includes('everyone') ||
+      (hasFemale && hasMale) ||
+      payload.targetPrefs.length === 0;
+    const mappedTarget: 'girls' | 'boys' | 'any' = hasEveryone ? 'any' : hasFemale ? 'girls' : 'boys';
+
+    const resolvedName = payload.userName?.trim() || user.name || 'Guest User';
+    setUser((prev) => {
+      const next = {
+        ...prev,
+        name: resolvedName,
+        gender: mappedGender,
+        age: payload.userAge,
+        verified: true,
+      };
+      localStorage.setItem('oriolivecall_user', JSON.stringify(next));
+      return next;
+    });
+    setPreferences((prev) => ({
+      ...prev,
+      targetGender: mappedTarget,
+    }));
+    localStorage.setItem('oriolivecall_auth', 'authenticated');
+    setAuthStep('authenticated');
+    setShowReferenceLoginModal(false);
+    setActiveTab('chat');
+    startMatchingWithOverrides({
+      name: resolvedName,
+      gender: mappedGender,
+      targetGender: mappedTarget,
+      callMode: payload.callMode || 'video',
+    });
+  };
+
   // SPLASH LOADING SCREEN WITH PERFECTLY SIZED APP LOGO
   if (isInitializing) {
     return (
@@ -2555,6 +2699,10 @@ export default function App() {
         <nav className="hidden xl:flex items-center gap-4 text-xs font-medium text-slate-400">
           <button onClick={() => setActiveTab('home')} className={`hover:text-white ${activeTab === 'home' ? 'text-white font-bold' : ''}`}>{t.navHome}</button>
           <button onClick={() => setActiveTab('chat')} className={`hover:text-white ${activeTab === 'chat' ? 'text-white font-bold' : ''}`}>{t.navChat}</button>
+          <button onClick={() => setActiveTab('multiplayer' as any)} className={`hover:text-purple-400 flex items-center gap-1 ${activeTab === ('multiplayer' as any) ? 'text-purple-400 font-bold' : ''}`}>
+            <Radio className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+            <span>5+ Video Lounge</span>
+          </button>
           <button onClick={() => { setActiveTab('friends'); fetchMyFriends(); }} className={`hover:text-white flex items-center gap-1 ${activeTab === 'friends' ? 'text-white font-bold' : ''}`}>
             <span>{t.navFriends}</span>
           </button>
@@ -2565,50 +2713,20 @@ export default function App() {
             {messageRequests.length > 0 && <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-[9px] text-white">{messageRequests.length}</span>}
           </button>
           <button onClick={() => { setActiveTab('shorts'); fetchShorts(); }} className={`hover:text-white ${activeTab === 'shorts' ? 'text-white font-bold' : ''}`}>{t.navShorts}</button>
-          <button onClick={() => setActiveTab('live')} className={`hover:text-white ${activeTab === 'live' ? 'text-white font-bold' : ''}`}>{t.navLive}</button>
-          <button onClick={() => setActiveTab('wallet')} className={`hover:text-white ${activeTab === 'wallet' ? 'text-white font-bold' : ''}`}>{t.navWallet}</button>
         </nav>
 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={() => setActiveTab('privacy-policy')}
             className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/50 border border-purple-500/40 text-xs font-semibold text-purple-200 hover:text-white hover:border-purple-400 transition-all"
-            title="Security & Privacy Policy Widget"
+            title="Privacy Policy & Google Cookies Consent"
           >
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Security &amp; Privacy</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setGiftTargetName('Global Creator');
-              setShowGiftModal(true);
-            }}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-500/40 text-xs font-semibold text-amber-300 hover:text-white transition-all"
-            title="Give Gift"
-          >
-            <Gift className="w-3.5 h-3.5 text-amber-400" />
-            <span>Give Gift</span>
-          </button>
-
-          <button
-            onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition-all"
-          >
-            <Globe className="w-3.5 h-3.5 text-purple-400" />
-            <span>{lang === 'en' ? 'বাংলা' : 'English'}</span>
+            <span>Privacy &amp; Cookies</span>
           </button>
 
           {authStep === 'authenticated' ? (
             <div className="flex items-center gap-2.5">
-              <button
-                onClick={() => { setActiveTab('wallet'); fetchWallet(); }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-950/60 border border-purple-800/60 text-xs font-medium text-purple-200 hover:border-purple-600 transition-colors"
-                title={`Saved User ID: ${user.userId}`}
-              >
-                <Wallet className="w-3.5 h-3.5 text-purple-400" />
-                <span>${wallet?.balance?.toFixed(2) || '250.00'}</span>
-              </button>
               <button
                 onClick={() => setActiveTab('profile')}
                 className="hidden md:flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
@@ -2627,6 +2745,12 @@ export default function App() {
                 </div>
               </button>
               <button
+                onClick={() => setShowReferenceLoginModal(true)}
+                className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-200 hover:border-pink-400 transition-colors"
+              >
+                Match Login
+              </button>
+              <button
                 onClick={handleLogout}
                 className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 transition-colors"
                 title="Logout"
@@ -2636,11 +2760,8 @@ export default function App() {
             </div>
           ) : (
             <button
-              onClick={() => {
-                setActiveTab('chat');
-                setAuthStep('signin');
-              }}
-              className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:from-purple-500 hover:to-blue-500 shadow-lg shadow-purple-600/25 transition-all whitespace-nowrap shrink-0"
+              onClick={() => setShowReferenceLoginModal(true)}
+              className="px-4 py-2 text-xs font-semibold text-white bg-[#f43f8e] hover:bg-[#db2777] rounded-lg shadow-lg shadow-pink-600/25 transition-all whitespace-nowrap shrink-0"
             >
               Sign In
             </button>
@@ -2648,7 +2769,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* --- ALL 23 NAVIGATION ITEMS DROPDOWN MENU --- */}
+      {/* --- NAVIGATION DROPDOWN MENU (FREE FEATURES ONLY) --- */}
       {navOpen && (
         <div className="absolute top-20 left-6 z-50 w-80 p-5 rounded-3xl bg-slate-900/98 backdrop-blur-xl border border-slate-800 shadow-2xl space-y-2 animate-in fade-in slide-in-from-top-4 duration-200 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -2670,26 +2791,19 @@ export default function App() {
             {[
               { id: 'home', label: t.navHome, icon: Home },
               { id: 'chat', label: t.navChat, icon: Video },
+              { id: 'multiplayer', label: '5+ Multiplayer Lounge', icon: Radio },
               { id: 'friends', label: t.navFriends, icon: UserPlus },
               { id: 'videos', label: t.navVideos, icon: Play },
               { id: 'community', label: t.navCommunity, icon: Users },
               { id: 'messages', label: t.navMessages, icon: MessageSquare },
               { id: 'shorts', label: t.navShorts, icon: Flame },
               { id: 'live', label: t.navLive, icon: Radio },
-              { id: 'creators', label: t.navCreators, icon: Compass },
+              { id: 'creators', label: 'Discover Profiles', icon: Compass },
               { id: 'profile', label: t.navProfile, icon: User },
-              { id: 'creator-dashboard', label: t.navCreatorDash, icon: BarChart3 },
-              { id: 'wallet', label: t.navWallet, icon: Wallet },
-              { id: 'send-money', label: t.navSend, icon: Send },
-              { id: 'receive-money', label: t.navReceive, icon: ArrowDownLeft },
-              { id: 'history', label: t.navHistory, icon: RefreshCcw },
-              { id: 'gifts', label: t.navGifts, icon: Gift },
-              { id: 'subscriptions', label: t.navSubs, icon: Crown },
-              { id: 'payment-methods', label: t.navPayMethods, icon: CreditCard },
               { id: 'notifications', label: t.navNotifs, icon: Bell },
               { id: 'settings', label: t.navSettings, icon: SettingsIcon },
               { id: 'help', label: t.navHelp, icon: HelpIcon },
-              { id: 'privacy-policy', label: t.navPrivacy, icon: Shield },
+              { id: 'privacy-policy', label: 'Privacy & Google Cookies', icon: Shield },
               { id: 'terms', label: t.navTerms, icon: FileText },
               { id: 'guidelines', label: t.navGuidelines, icon: CheckCircle2 },
               { id: 'admin', label: t.navAdmin, icon: ShieldAlert },
@@ -2710,7 +2824,6 @@ export default function App() {
                     if (item.id === 'home') fetchPromotions();
                     if (item.id === 'friends') fetchMyFriends();
                     if (item.id === 'messages') { fetchMessages(); fetchMyFriends(); }
-                    if (item.id === 'subscriptions') fetchSubscriptions();
                   }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all text-left ${activeTab === item.id ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-200 hover:bg-slate-800'}`}
                 >
@@ -2733,12 +2846,57 @@ export default function App() {
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col">
         
-        {/* --- 1. HOME TAB WITH PERMANENT 16:9 PREVIEW, BANNER & CAROUSEL --- */}
+        {/* --- 1. HOME TAB WITH PERMANENT 16:9 PREVIEW, COOKIES UNDER PREVIEW, REFERENCE LOGIN, PRIVACY, BANNER & CAROUSEL --- */}
         {activeTab === 'home' && (
           <HomepageShowcaseSection
             lang={lang}
             promotions={promotions}
             isAdmin={true}
+            firebaseUser={firebaseUser}
+            authLoading={authLoading}
+            userName={user.name}
+            userGender={user.gender}
+            userAge={user.age}
+            userAvatar={user.avatar}
+            currentUserId={user.email || user.userId || 'guest-user'}
+            currentUserProfileId={user.profileId || 'ORI-100001'}
+            targetGender={preferences.targetGender}
+            cookieConsentStatus={cookieConsentStatus}
+            cookie18Checked={cookie18Checked}
+            guidelinesAgreed={guidelinesAgreed}
+            onToggleCookie18={(checked) => {
+              setCookie18Checked(checked);
+              setGoogle18Checked(checked);
+              setAgeLicenseAgreed(checked);
+              if (checked) localStorage.setItem('oriolivecall_age18_confirmed', 'true');
+              else localStorage.removeItem('oriolivecall_age18_confirmed');
+            }}
+            onToggleGuidelines={(checked) => {
+              setGuidelinesAgreed(checked);
+              if (checked) localStorage.setItem('oriolivecall_guidelines_agreed', 'true');
+              else localStorage.removeItem('oriolivecall_guidelines_agreed');
+            }}
+            onAcceptGoogleCookies={handleAcceptGoogleCookies}
+            onEssentialOnlyCookies={handleEssentialOnlyCookies}
+            onResetCookies={handleResetCookies}
+            onGoogleSignIn={handleGoogleSignIn}
+            onStartReferenceChat={handleStartReferenceChat}
+            onOpenPrivateMessageWithPeer={(peerId) => {
+              setSelectedDmPeer(peerId);
+              setActiveTab('messages');
+              fetchMessages();
+              fetchMyFriends();
+            }}
+            onStartDirectCall={(peerId, peerName, callType, peerProfileId, peerAvatar) => {
+              setActiveInstagramCall({
+                partnerId: peerId,
+                partnerName: peerName || peerId,
+                partnerProfileId: peerProfileId || (peerId.startsWith('ORI-') ? peerId : 'ORI-100204'),
+                partnerAvatar: peerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+                callType: callType || 'video',
+                isIncoming: false,
+              });
+            }}
             onNavigateTab={(tab) => {
               setActiveTab(tab as any);
               if (tab === 'admin') {
@@ -2748,271 +2906,15 @@ export default function App() {
               }
               if (tab === 'friends') fetchMyFriends();
               if (tab === 'messages') { fetchMessages(); fetchMyFriends(); }
-              if (tab === 'subscriptions') fetchSubscriptions();
             }}
             onStartAiTalk={startAiGlobalCall}
+            showToast={showToast}
           />
         )}
 
         {/* --- 2. RANDOM VIDEO CHAT & AI GLOBAL TALKING TAB --- */}
         {activeTab === 'chat' && (
           <div className="flex-1 flex flex-col">
-            {authStep !== 'authenticated' && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
-                <div className="w-full max-w-md p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
-                  
-                  {authStep === 'welcome' && (
-                    <div className="text-center space-y-4">
-                      <div className="w-20 h-20 mx-auto rounded-2xl overflow-hidden bg-[#05060f] border border-purple-500/50 flex items-center justify-center shadow-xl shadow-purple-500/35">
-                        <img
-                          src="/assets/aistudio/7fe1f9ca-cea4-4205-ad16-563ba4b11d39_3bbe7aa0.jpg"
-                          alt="OrioLiveCall Logo"
-                          className="w-full h-full object-cover translate-x-[70%] scale-[2.65]"
-                        />
-                      </div>
-                      <h2 className="text-2xl font-bold text-white">{t.brand}</h2>
-                      <p className="text-sm text-slate-400">{t.tagline}</p>
-
-                      <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950 border border-slate-800 text-left cursor-pointer hover:border-purple-500/50 transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={google18Checked}
-                          onChange={(e) => setGoogle18Checked(e.target.checked)}
-                          className="mt-0.5 w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
-                        />
-                        <span className="text-[11px] text-slate-300 leading-relaxed">
-                          I confirm I am <strong className="text-white">18+ years old</strong> and allow{' '}
-                          <strong className="text-purple-300">Google Sign-In & essential cookies</strong>.
-                        </span>
-                      </label>
-
-                      <div className="pt-1 space-y-3">
-                        <button
-                          onClick={() => {
-                            if (!google18Checked) {
-                              showToast('Please tick the 18+ years confirmation box above first.', 'error');
-                              return;
-                            }
-                            handleGoogleSignIn();
-                          }}
-                          disabled={authLoading}
-                          className="w-full py-3 px-4 rounded-xl bg-white text-slate-900 font-bold text-sm shadow-xl hover:bg-slate-100 transition-all flex items-center justify-center gap-3 disabled:opacity-60"
-                        >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                          </svg>
-                          <span>{authLoading ? 'Connecting Firebase...' : t.googleSignIn}</span>
-                        </button>
-
-                        <button
-                          onClick={() => setAuthStep('age-verify')}
-                          className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold text-sm shadow-lg shadow-purple-600/25 hover:opacity-95 transition-all flex items-center justify-center gap-2"
-                        >
-                          <Shield className="w-4 h-4" />
-                          <span>Get Started with Calendar DOB</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {authStep === 'age-verify' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 text-purple-400">
-                        <Calendar className="w-6 h-6" />
-                        <h3 className="text-lg font-bold text-white">{t.ageCheckTitle}</h3>
-                      </div>
-                      <p className="text-xs text-slate-400">{t.ageCheckDesc}</p>
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-slate-300">{t.birthDateLabel}</label>
-                        <input
-                          type="date"
-                          value={birthDateInput}
-                          onChange={(e) => setBirthDateInput(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-purple-500"
-                        />
-                      </div>
-                      <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={ageLicenseAgreed}
-                          onChange={(e) => setAgeLicenseAgreed(e.target.checked)}
-                          className="mt-0.5 accent-purple-600"
-                        />
-                        <span className="text-[11px] text-slate-300 leading-relaxed">
-                          I confirm that I am <strong className="text-white">18 years or older</strong> and accept the{' '}
-                          <span className="text-purple-300 font-semibold">OrioLiveCall License Disclaimer</span>, privacy-first policy, and strict <strong className="text-emerald-300">non-explicit safe content rules</strong>.
-                        </span>
-                      </label>
-                      <button
-                        onClick={verifyAgeWithCalendar}
-                        className="w-full py-3 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-500 transition-all shadow-lg shadow-purple-600/30"
-                      >
-                        {t.verifyBtn}
-                      </button>
-                    </div>
-                  )}
-
-                  {authStep === 'profile-setup' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-white">Complete Your Profile</h3>
-                        <span className="text-xs font-mono text-purple-400 px-2.5 py-1 rounded-lg bg-purple-950 border border-purple-800">
-                          Saved ID: {user.userId}
-                        </span>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs font-medium text-slate-300">{t.nameLabel}</label>
-                          <input
-                            type="text"
-                            placeholder="Your Name"
-                            value={user.name}
-                            onChange={(e) => setUser({ ...user, name: e.target.value })}
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm mt-1"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-300">{t.genderLabel}</label>
-                          <select
-                            value={user.gender}
-                            onChange={(e: any) => setUser({ ...user, gender: e.target.value })}
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm mt-1"
-                          >
-                            <option value="girls">Female / নারী</option>
-                            <option value="boys">Male / পুরুষ</option>
-                            <option value="other">Other / অন্যান্য</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-300">{t.countryLabel}</label>
-                          <select
-                            value={user.country}
-                            onChange={(e) => setUser({ ...user, country: e.target.value })}
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm mt-1"
-                          >
-                            <option value="Bangladesh">Bangladesh</option>
-                            <option value="India">India</option>
-                            <option value="United States">United States</option>
-                            <option value="United Kingdom">United Kingdom</option>
-                            <option value="Canada">Canada</option>
-                            <option value="Australia">Australia</option>
-                            <option value="Other">Other Countries</option>
-                          </select>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (!user.name) setUser({ ...user, name: "Adult User" });
-                          setAuthStep('authenticated');
-                        }}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold text-sm hover:opacity-95 transition-all"
-                      >
-                        {t.saveProfile}
-                      </button>
-                    </div>
-                  )}
-
-                  {authStep === 'signin' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#05060f] border border-purple-500/40 shrink-0">
-                            <img
-                              src="/assets/aistudio/7fe1f9ca-cea4-4205-ad16-563ba4b11d39_3bbe7aa0.jpg"
-                              alt="OrioLiveCall Logo"
-                              className="w-full h-full object-cover translate-x-[70%] scale-[2.65]"
-                            />
-                          </div>
-                          <h3 className="text-lg font-bold text-white">Sign In to OrioLiveCall</h3>
-                        </div>
-                        <span className="text-xs font-mono text-purple-400">ID: {user.userId}</span>
-                      </div>
-
-                      <label className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-purple-500/50 transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={google18Checked}
-                          onChange={(e) => setGoogle18Checked(e.target.checked)}
-                          className="mt-0.5 w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
-                        />
-                        <span className="text-[11px] text-slate-300 leading-relaxed">
-                          I confirm I am <strong className="text-white">18+ years old</strong> and allow Google Sign-In & cookies.
-                        </span>
-                      </label>
-
-                      <button
-                        onClick={() => {
-                          if (!google18Checked) {
-                            showToast('Please tick the 18+ years confirmation box first.', 'error');
-                            return;
-                          }
-                          handleGoogleSignIn();
-                        }}
-                        disabled={authLoading}
-                        className="w-full py-3 px-4 rounded-xl bg-white text-slate-900 font-bold text-sm shadow-xl hover:bg-slate-100 transition-all flex items-center justify-center gap-3 disabled:opacity-60"
-                      >
-                        <svg className="w-5 h-5" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                        </svg>
-                        <span>{authLoading ? 'Connecting Firebase...' : t.googleSignIn}</span>
-                      </button>
-
-                      <div className="relative flex py-2 items-center">
-                        <div className="flex-grow border-t border-slate-800"></div>
-                        <span className="flex-shrink mx-4 text-slate-500 text-xs uppercase">Or Email</span>
-                        <div className="flex-grow border-t border-slate-800"></div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs font-medium text-slate-300">{t.emailLabel}</label>
-                          <input
-                            type="email"
-                            placeholder="user@example.com"
-                            value={emailInput}
-                            onChange={(e) => setEmailInput(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm mt-1"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-300">{t.passwordLabel}</label>
-                          <input
-                            type="password"
-                            placeholder="••••••••"
-                            value={passInput}
-                            onChange={(e) => setPassInput(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm mt-1"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setUser(prev => ({ ...prev, email: emailInput || 'user@oriolivecall.com', name: emailInput.split('@')[0] || 'Verified User', verified: true }));
-                          setAuthStep('authenticated');
-                        }}
-                        className="w-full py-3 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-500 transition-all"
-                      >
-                        Sign In
-                      </button>
-                      <button
-                        onClick={() => setAuthStep('age-verify')}
-                        className="w-full text-xs text-purple-400 hover:underline text-center"
-                      >
-                        Need an account? Register with Calendar Date of Birth
-                      </button>
-                    </div>
-                  )}
-
-                </div>
-              </div>
-            )}
-
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 max-w-7xl mx-auto w-full">
               
               {/* Left Sidebar Controls */}
@@ -3041,37 +2943,49 @@ export default function App() {
                     </span>
                   </div>
 
-                  {/* Adult 18+ Server Verification Status */}
-                  <div className={`p-3 rounded-2xl border flex items-center justify-between gap-2 ${
-                    ageVerifyStatus?.verified
-                      ? 'bg-emerald-950/30 border-emerald-500/40'
-                      : 'bg-amber-950/30 border-amber-500/40'
-                  }`}>
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                        <ShieldCheck className={`w-3.5 h-3.5 shrink-0 ${ageVerifyStatus?.verified ? 'text-emerald-400' : 'text-amber-400'}`} />
-                        <span>{ageVerifyStatus?.verified ? '18+ Adult Verified' : '18+ Verification Required'}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 truncate">
-                        {ageVerifyStatus?.verified
-                          ? `${ageVerifyStatus.method || '18+ Verified'} • Free access unlocked`
-                          : 'Required before entering video matching'}
+                  {/* Quick Call Identity: Only Name, Years (Age) & Gender Needed (No Signup / No 18+ Confirm) */}
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="text-[11px] font-bold text-purple-300">
+                      Your Call Info (No Signup Required)
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        aria-label="Your name"
+                        value={user.name}
+                        onChange={(e) => setUser((prev) => ({ ...prev, name: e.target.value }))}
+                        placeholder="Enter your name"
+                        maxLength={40}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-purple-500"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          aria-label="Your gender"
+                          value={user.gender}
+                          onChange={(e) => setUser((prev) => ({ ...prev, gender: e.target.value as 'girls' | 'boys' | 'other' }))}
+                          className="px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-purple-500"
+                        >
+                          <option value="boys">Male</option>
+                          <option value="girls">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                        <select
+                          aria-label="Your years"
+                          value={user.age}
+                          onChange={(e) => setUser((prev) => ({ ...prev, age: Number(e.target.value) }))}
+                          className="px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:outline-none focus:border-purple-500"
+                        >
+                          {Array.from({ length: 53 }, (_, idx) => 18 + idx).map((yr) => (
+                            <option key={yr} value={yr}>{yr} years</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
-                    {!ageVerifyStatus?.verified && (
-                      <button
-                        type="button"
-                        onClick={() => setAgeModalOpen(true)}
-                        className="px-2.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-[10px] font-extrabold hover:bg-amber-400 shrink-0"
-                      >
-                        Verify 18+
-                      </button>
-                    )}
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-emerald-950/25 border border-emerald-500/30 text-[10px] text-emerald-200 space-y-1">
                     <div className="font-bold">100% Free Random Video Matching</div>
-                    <div className="text-slate-400">No subscription required. No call recording by default.</div>
+                    <div className="text-slate-400">Only name, years, and gender needed. No signup required.</div>
                   </div>
 
                   {/* Firebase & Google Account Status Chip */}
@@ -3892,6 +3806,15 @@ export default function App() {
                     </button>
 
                     <button
+                      onClick={toggleScreenShareInCall}
+                      className={`px-3 py-3 rounded-xl border font-semibold text-xs transition-all flex items-center gap-1.5 ${isScreenSharingInCall ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'}`}
+                      title="Share Screen live to callers"
+                    >
+                      <MonitorUp className="w-4 h-4" />
+                      <span className="hidden sm:inline">{isScreenSharingInCall ? 'Sharing' : 'Share Screen'}</span>
+                    </button>
+
+                    <button
                       onClick={toggleFullscreen}
                       className={`px-3 py-3 rounded-xl border font-semibold text-xs transition-all flex items-center gap-1.5 ${isFullscreen ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'}`}
                       title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Call'}
@@ -3942,17 +3865,6 @@ export default function App() {
                             </button>
                           </>
                         )}
-
-                        <button
-                          onClick={() => {
-                            setGiftTargetName(partnerInfo?.name || 'Partner');
-                            setShowGiftModal(true);
-                          }}
-                          className="px-3.5 py-3 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition-all flex items-center gap-1.5"
-                        >
-                          <Gift className="w-4 h-4" />
-                          <span className="hidden md:inline">Gift</span>
-                        </button>
 
                         <button
                           onClick={handleNextPerson}
@@ -4016,6 +3928,16 @@ export default function App() {
               fetchMessages();
               fetchMyFriends();
             }}
+            onStartDirectCall={(peerId, peerName, callType, peerProfileId, peerAvatar) => {
+              setActiveInstagramCall({
+                partnerId: peerId,
+                partnerName: peerName || peerId,
+                partnerProfileId: peerProfileId || (peerId.startsWith('ORI-') ? peerId : 'ORI-100204'),
+                partnerAvatar: peerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+                callType: callType || 'video',
+                isIncoming: false,
+              });
+            }}
             onOpenReport={(targetType, targetId) => handleOpenReport(targetType, targetId)}
             onRefreshPrivacyAndMessages={() => {
               fetchMessages();
@@ -4036,28 +3958,6 @@ export default function App() {
             followerCounts={followerCounts}
             subscriberCounts={subscriberCounts}
             onToggleFollow={handleToggleFollow}
-            onOpenSubscribeModal={(cid, cname) => {
-              const found = creators.find((c) => c.id === cid) || {
-                id: cid,
-                name: cname,
-                username: `@${cname.toLowerCase().replace(/\s+/g, '_')}`,
-                country: 'Global',
-                gender: 'Female',
-                avatar: user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-                bio: 'OrioLiveCall Creator',
-                creatorBadge: true,
-                online: true,
-                subscribersCount: subscriberCounts[cid] || 0,
-                monthlyPrice: 19.99,
-                yearlyPrice: 149.99,
-              };
-              setSubTargetCreator(found);
-              setShowSubscriptionModal(true);
-            }}
-            onOpenGiftModal={(creatorName) => {
-              setGiftTargetName(creatorName);
-              setShowGiftModal(true);
-            }}
             onOpenReport={(targetType, targetId) => handleOpenReport(targetType, targetId)}
             onSyncLikeFirestore={(videoId, liked) => {
               if (firebaseUser) {
@@ -4114,7 +4014,7 @@ export default function App() {
                             </span>
                           )}
                           <p className="text-xs text-purple-300 mt-0.5">
-                            {creator.country} • {realFollowers} Followers • {realSubs} Subs
+                            {creator.country} • {realFollowers} Followers
                           </p>
                           <span className={`inline-flex items-center gap-1 text-[10px] mt-1 font-semibold ${creator.online ? 'text-emerald-400' : 'text-slate-500'}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${creator.online ? 'bg-emerald-400' : 'bg-slate-600'}`} />
@@ -4131,7 +4031,7 @@ export default function App() {
                       </button>
                     </div>
                     <p className="text-xs text-slate-300">{creator.bio}</p>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button onClick={() => setSelectedProfileForModal(creator)} className="py-2 px-2 rounded-xl bg-slate-950 text-slate-200 text-xs font-semibold hover:bg-slate-800">Profile</button>
                       <button
                         onClick={() => handleToggleFollow(creator.id)}
@@ -4139,8 +4039,17 @@ export default function App() {
                       >
                         {isFollowing ? 'Following' : 'Follow'}
                       </button>
-                      <button onClick={() => { setGiftTargetName(creator.name); setShowGiftModal(true); }} className="py-2 px-2 rounded-xl bg-amber-500/10 text-amber-300 text-xs font-semibold hover:bg-amber-500/20">Gift</button>
-                      <button onClick={() => { setSubTargetCreator(creator); setShowSubscriptionModal(true); }} className="py-2 px-2 rounded-xl bg-purple-600 text-white text-xs font-bold">Join</button>
+                      <button
+                        onClick={() => {
+                          setSelectedDmPeer(creator.username || creator.id);
+                          setActiveTab('messages');
+                          fetchMessages();
+                          fetchMyFriends();
+                        }}
+                        className="py-2 px-2 rounded-xl bg-purple-600 text-white text-xs font-bold"
+                      >
+                        Message
+                      </button>
                     </div>
                   </div>
                 );
@@ -4153,6 +4062,9 @@ export default function App() {
         {activeTab === 'messages' && (
           <MessagingAndPrivacyView
             currentUserId={user.email || user.userId || 'guest-user'}
+            currentUserName={user.name || 'Orio Member'}
+            currentUserProfileId={user.profileId || 'ORI-100001'}
+            currentUserAvatar={user.avatar}
             contacts={creators}
             friends={myFriendsList}
             initialSelectedPeer={selectedDmPeer}
@@ -4163,39 +4075,47 @@ export default function App() {
             onRefreshMessages={() => { fetchMessages(); fetchMyFriends(); }}
             onUpdatePrivacy={handleUpdateMsgPrivacy}
             onUpdateExtendedPrivacy={handleUpdateExtendedPrivacy}
-            onOpenGiftModal={(targetName) => {
-              setGiftTargetName(targetName);
-              setShowGiftModal(true);
-            }}
             onOpenReport={(targetType, targetId) => handleOpenReport(targetType, targetId)}
+            onStartDirectCall={(peerId, peerName, callType) => {
+              setActiveInstagramCall({
+                partnerId: peerId,
+                partnerName: peerName || peerId,
+                partnerProfileId: peerId.startsWith('ORI-') ? peerId : 'ORI-100204',
+                partnerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+                callType: callType || 'video',
+                isIncoming: false,
+              });
+            }}
             showToast={showToast}
           />
         )}
 
-        {/* --- 5. HOT SHORTS TAB --- */}
+        {/* --- 5. HOT SHORTS & REELS TAB --- */}
         {activeTab === 'shorts' && (
           <div className="max-w-xl mx-auto p-6 flex-1 flex flex-col items-center justify-center relative w-full space-y-4">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                fetchShorts(shortsSearch);
-              }}
-              className="w-full max-w-sm flex gap-2"
-            >
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={shortsSearch}
-                  onChange={(e) => setShortsSearch(e.target.value)}
-                  placeholder="Search shorts or #hashtags..."
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500"
-                />
-              </div>
-              <button type="submit" className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold">
-                Find
-              </button>
-            </form>
+            <div className="w-full max-w-sm flex gap-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  fetchShorts(shortsSearch);
+                }}
+                className="flex-1 flex gap-2"
+              >
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={shortsSearch}
+                    onChange={(e) => setShortsSearch(e.target.value)}
+                    placeholder="Search shorts..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <button type="submit" className="px-3.5 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold">
+                  Find
+                </button>
+              </form>
+            </div>
 
             <div className="relative w-full max-w-sm h-[580px] bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col justify-between">
               {shorts.length > 0 ? (
@@ -4237,20 +4157,22 @@ export default function App() {
                         <Heart className="w-3.5 h-3.5" />
                         <span>{shorts[currentShortIdx]?.likes || 0}</span>
                       </button>
-                      <button
-                        onClick={() => {
-                          setGiftTargetName(shorts[currentShortIdx]?.creatorName || 'Creator');
-                          setShowGiftModal(true);
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-bold flex items-center gap-1.5"
-                      >
-                        <Gift className="w-3.5 h-3.5" />
-                        <span>Gift</span>
-                      </button>
                       <div className="flex-1" />
                       <button onClick={() => setCurrentShortIdx((currentShortIdx - 1 + shorts.length) % shorts.length)} className="px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs">Prev</button>
                       <button onClick={() => setCurrentShortIdx((currentShortIdx + 1) % shorts.length)} className="px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-bold">Next</button>
                     </div>
+
+                    {/* Display recent comments */}
+                    {shorts[currentShortIdx]?.comments && shorts[currentShortIdx].comments.length > 0 && (
+                      <div className="max-h-24 overflow-y-auto space-y-1 pr-1 text-[11px] bg-black/50 p-2.5 rounded-2xl backdrop-blur-md border border-white/10">
+                        {shorts[currentShortIdx].comments.slice(0, 4).map((cm, cidx) => (
+                          <div key={cidx} className="text-slate-200">
+                            <strong className="text-purple-300 mr-1">{cm.user}:</strong>
+                            <span>{cm.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     <form
                       onSubmit={async (e) => {
@@ -4301,12 +4223,7 @@ export default function App() {
             socket={socket}
             follows={follows}
             onToggleFollow={handleToggleFollow}
-            onOpenGiftModal={(creatorName) => {
-              setGiftTargetName(creatorName);
-              setShowGiftModal(true);
-            }}
             onOpenReport={(targetType, targetId) => handleOpenReport(targetType, targetId)}
-            onWalletUpdated={fetchWallet}
             showToast={showToast}
           />
         )}
@@ -4386,16 +4303,16 @@ export default function App() {
                 <span>Your unique <strong className="text-purple-300">ORI-XXXXXX</strong> Profile ID stays permanently unchanged unless an authorized account migration is requested.</span>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setActiveTab('subscriptions')}
+                    onClick={() => { setActiveTab('friends'); fetchMyFriends(); }}
                     className="px-3 py-1.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-200 font-bold"
                   >
-                    Subscriptions
+                    Global Friends
                   </button>
                   <button
-                    onClick={() => setActiveTab('payment-methods')}
+                    onClick={() => setActiveTab('privacy-policy')}
                     className="px-3 py-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 font-bold"
                   >
-                    Payment Methods
+                    Privacy &amp; Google Cookies
                   </button>
                 </div>
               </div>
@@ -4444,188 +4361,7 @@ export default function App() {
           </div>
         )}
 
-        {/* --- 9. CREATOR DASHBOARD TAB --- */}
-        {activeTab === 'creator-dashboard' && (
-          <CreatorDashboardView
-            creatorId={user.email || user.userId || 'guest-user'}
-            creatorName={user.name}
-            creatorAvatar={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-            onSyncVideoFirestore={(video) => {
-              if (firebaseUser) saveVideoToFirestore(firebaseUser, video).catch(() => {});
-            }}
-            onSyncLiveFirestore={(streamItem) => {
-              if (firebaseUser) saveLiveStreamToFirestore(firebaseUser, streamItem).catch(() => {});
-            }}
-            showToast={showToast}
-          />
-        )}
-
-        {/* --- 10-13. WALLET & MONEY SYSTEM TABS --- */}
-        {['wallet', 'send-money', 'receive-money', 'history'].includes(activeTab) && (
-          <div className="max-w-6xl mx-auto p-8 space-y-8 w-full flex-1">
-            <div className="flex flex-wrap justify-between items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-white">Wallet & Global Financial Ledger</h1>
-                <p className="text-xs text-slate-400 mt-1">Profile ID: {user.profileId || user.userId}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => setActiveTab('payment-methods')}
-                  className="px-4 py-2 rounded-xl bg-purple-600/20 border border-purple-500/40 text-xs font-bold text-purple-200 hover:bg-purple-600/30 flex items-center gap-2"
-                >
-                  <CreditCard className="w-4 h-4 text-purple-400" />
-                  <span>Payment Methods Center</span>
-                </button>
-                <div className="text-xl font-extrabold text-emerald-400">${wallet?.balance?.toFixed(2) || '1850.00'} USD</div>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <form onSubmit={handleSendMoney} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-                <h3 className="text-base font-bold text-white">Send Money</h3>
-                <input
-                  type="text"
-                  required
-                  placeholder="Recipient Email or ORIO-ID"
-                  value={sendRecipient}
-                  onChange={(e) => setSendRecipient(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  placeholder="Amount (USD)"
-                  value={sendAmount}
-                  onChange={(e) => setSendAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Note"
-                  value={sendDesc}
-                  onChange={(e) => setSendDesc(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-                />
-                <button type="submit" className="w-full py-2.5 rounded-xl bg-purple-600 text-white text-xs font-bold">Transfer Funds</button>
-              </form>
-
-              <form onSubmit={handleWithdraw} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-                <h3 className="text-base font-bold text-white">Withdraw Funds</h3>
-                <select
-                  value={withdrawMethod}
-                  onChange={(e) => setWithdrawMethod(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-                >
-                  <option value="bKash / Mobile Banking">bKash / Mobile Banking</option>
-                  <option value="Bank Wire Transfer">International Bank Wire</option>
-                  <option value="Visa / Mastercard">Visa / Mastercard</option>
-                </select>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  placeholder="Withdrawal Amount (USD)"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-                />
-                <button type="submit" className="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">Request Withdrawal</button>
-              </form>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-              <h3 className="text-lg font-bold text-white">Transaction History & Receipts</h3>
-              <div className="space-y-2">
-                {wallet?.transactions?.map((tx, i) => (
-                  <div key={i} className="p-4 rounded-2xl bg-slate-950 flex justify-between items-center text-xs">
-                    <div>
-                      <div className="font-mono text-purple-300">{tx.txId}</div>
-                      <div className="text-slate-400">{tx.description}</div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-emerald-400">${tx.amount.toFixed(2)}</span>
-                      {tx.status === 'completed' && (
-                        <button onClick={() => setSelectedTxForDispute(tx.txId)} className="text-purple-400 hover:underline">Dispute</button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {selectedTxForDispute && (
-                <div className="p-4 rounded-2xl bg-slate-950 border border-purple-700 space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Reason for dispute..."
-                    value={disputeReason}
-                    onChange={(e) => setDisputeReason(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white"
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={handleDispute} className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold">Submit</button>
-                    <button onClick={() => setSelectedTxForDispute(null)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Cancel</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* --- 14. GIFT SHOP TAB --- */}
-        {activeTab === 'gifts' && (
-          <div className="max-w-6xl mx-auto p-8 space-y-6 w-full flex-1">
-            <h1 className="text-3xl font-bold text-white">Virtual Gift Shop</h1>
-            <div className="grid md:grid-cols-4 gap-6">
-              {[
-                { name: 'Red Rose 🌹', price: 10 },
-                { name: 'Diamond Crown 👑', price: 50 },
-                { name: 'Super Star ⭐', price: 100 },
-                { name: 'Luxury Car 🏎️', price: 500 }
-              ].map(g => (
-                <div key={g.name} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-4">
-                  <div className="text-4xl">🎁</div>
-                  <div className="font-bold text-white">{g.name}</div>
-                  <div className="text-amber-400 font-bold">${g.price} USD</div>
-                  <button onClick={() => { setGiftTargetName('Creator'); setShowGiftModal(true); }} className="w-full py-2.5 rounded-xl bg-purple-600 text-white text-xs font-bold">Send Gift</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* --- 15. SUBSCRIPTION PURCHASE CENTER TAB --- */}
-        {activeTab === 'subscriptions' && (
-          <SubscriptionCenterView
-            currentUserId={user.email || user.userId || 'guest-user'}
-            walletBalance={wallet?.balance ?? 1850}
-            creators={profileDirectoryResults.length > 0 ? profileDirectoryResults : creators}
-            follows={follows}
-            subscriptions={subscriptions}
-            followerCounts={followerCounts}
-            subscriberCounts={subscriberCounts}
-            recentCreatorUploads={recentCreatorUploads}
-            firebaseUser={firebaseUser}
-            onToggleFollow={handleToggleFollow}
-            onRefreshAll={() => {
-              fetchSubscriptions();
-              fetchWallet();
-            }}
-            onNavigateTab={(tab) => setActiveTab(tab as any)}
-            showToast={showToast}
-          />
-        )}
-
-        {/* --- 15B. PAYMENT METHODS CENTER TAB --- */}
-        {activeTab === 'payment-methods' && (
-          <PaymentMethodsCenterView
-            currentUserId={user.email || user.userId || 'guest-user'}
-            walletBalance={wallet?.balance ?? 1850}
-            firebaseUser={firebaseUser}
-            onWalletUpdated={fetchWallet}
-            onNavigateTab={(tab) => setActiveTab(tab as any)}
-            showToast={showToast}
-          />
-        )}
+        {/* Monetization, wallet, gift shop, subscriptions, and video publishing tabs removed: 100% free platform */}
 
         {/* --- 16. NOTIFICATIONS TAB --- */}
         {activeTab === 'notifications' && (
@@ -4701,6 +4437,17 @@ export default function App() {
               setCookie18Checked(false);
               showToast('Cookie preferences reset. Please review the 18+ checkmark banner.', 'info');
             }}
+            showToast={showToast}
+          />
+        )}
+
+        {/* --- MULTIPLAYER LIVE LOUNGE (5+ PEOPLE VIDEO CALL & LIVE CHAT) --- */}
+        {activeTab === ('multiplayer' as any) && (
+          <MultiplayerLiveLounge
+            currentUserId={user.email || user.userId || 'guest-user'}
+            currentUserName={user.name || 'User'}
+            currentUserProfileId={user.profileId || 'ORI-100001'}
+            socket={socket}
             showToast={showToast}
           />
         )}
@@ -4960,149 +4707,70 @@ export default function App() {
         )}
       </main>
 
-      {/* --- GOOGLE COOKIE & 18+ YEARS TICK-MARK CONSENT BANNER --- */}
-      {cookieConsentOpen && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/98 backdrop-blur-xl border-t border-purple-500/50 p-4 sm:p-5 shadow-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          <div className="flex items-start gap-3 max-w-3xl">
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#05060f] border border-purple-500/40 shrink-0 mt-0.5">
-              <img
-                src="/assets/aistudio/7fe1f9ca-cea4-4205-ad16-563ba4b11d39_3bbe7aa0.jpg"
-                alt="OrioLiveCall"
-                className="w-full h-full object-cover translate-x-[70%] scale-[2.65]"
-              />
-            </div>
-            <div className="text-xs text-slate-300 leading-relaxed space-y-2">
-              <div className="font-bold text-white flex items-center gap-2">
-                <Cookie className="w-4 h-4 text-purple-400" />
-                <span>Google Firebase Cookies &amp; 18+ Age Confirmation</span>
-              </div>
-              <p>
-                Google Authentication, Firebase security, and OrioLiveCall use cookies for login &amp; safety. Please tick the <strong className="text-white">18+ Years Checkmark</strong> below and click <strong className="text-purple-300">Allow Cookies</strong>.
-              </p>
-              <label className={`inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition-all ${
-                cookie18Checked
-                  ? 'bg-emerald-950/50 border-emerald-500/60 text-emerald-200'
-                  : 'bg-slate-950 border-purple-500/40 text-slate-200 hover:border-purple-400'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={cookie18Checked}
-                  onChange={(e) => setCookie18Checked(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer shrink-0"
-                />
-                <span className="text-[11px] font-semibold">
-                  ✓ I am 18+ years old &amp; allow Google/OrioLiveCall cookies (আমার বয়স ১৮+ এবং আমি কুকি অনুমোদন করছি)
-                </span>
-              </label>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 shrink-0 w-full lg:w-auto justify-end">
-            <button
-              onClick={() => {
-                if (!cookie18Checked) {
-                  showToast('Please click the 18+ years tick mark first before allowing cookies.', 'error');
-                  return;
-                }
-                localStorage.setItem('oriolivecall_cookie_consent', 'accepted');
-                localStorage.setItem('oriolivecall_age18_confirmed', 'true');
-                setGoogle18Checked(true);
-                setCookieConsentOpen(false);
-                showToast('18+ confirmed & Google cookies allowed!', 'success');
-              }}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all flex items-center gap-1.5 ${
-                cookie18Checked
-                  ? 'bg-gradient-to-r from-emerald-600 to-purple-600 text-white hover:opacity-95'
-                  : 'bg-purple-600/40 text-purple-200 border border-purple-500/40 hover:bg-purple-600/60'
-              }`}
-            >
-              <Check className="w-4 h-4" />
-              <span>Allow Cookies</span>
-            </button>
-            <button
-              onClick={() => {
-                localStorage.setItem('oriolivecall_cookie_consent', 'rejected');
-                setCookieConsentOpen(false);
-                showToast('Optional cookies declined; essential security cookies remain active.', 'info');
-              }}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
-            >
-              Essential Only
-            </button>
-          </div>
-        </div>
-      )}
+      {/* --- FLOATING GOOGLE COOKIES & AUTH NOTIFICATION (WITH SOUND EFFECT) --- */}
+      <GoogleCookiesNotification
+        open={cookieConsentOpen && !isFullscreen && !activeInstagramCall}
+        age18Confirmed={cookie18Checked}
+        guidelinesAgreed={guidelinesAgreed}
+        onToggleAge18={(checked) => {
+          setCookie18Checked(checked);
+          setGoogle18Checked(checked);
+          setAgeLicenseAgreed(checked);
+          if (checked) localStorage.setItem('oriolivecall_age18_confirmed', 'true');
+          else localStorage.removeItem('oriolivecall_age18_confirmed');
+        }}
+        onToggleGuidelines={(checked) => {
+          setGuidelinesAgreed(checked);
+          if (checked) localStorage.setItem('oriolivecall_guidelines_agreed', 'true');
+          else localStorage.removeItem('oriolivecall_guidelines_agreed');
+        }}
+        onAccept={handleAcceptGoogleCookies}
+        onDecline={handleEssentialOnlyCookies}
+        onOpenGuidelines={() => {
+          setActiveTab('guidelines');
+        }}
+      />
 
-      {/* --- GIVE GIFT MODAL --- */}
-      {showGiftModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
-          <div className="w-full max-w-md p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6 relative overflow-hidden">
-            {giftAnimationActive && (
-              <div className="absolute inset-0 bg-purple-950/95 z-50 flex flex-col items-center justify-center space-y-4">
-                <div className="text-6xl animate-bounce">{selectedGiftType.icon}</div>
-                <h3 className="text-2xl font-black text-white">Sending {selectedGiftType.name}!</h3>
-              </div>
-            )}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Gift className="w-5 h-5 text-amber-400" />
-                <span>Give Gift to {giftTargetName || 'Creator'}</span>
-              </h3>
-              <button onClick={() => setShowGiftModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { name: 'Red Rose 🌹', price: 10, icon: '🌹' },
-                { name: 'Diamond Crown 👑', price: 50, icon: '👑' },
-                { name: 'Super Star ⭐', price: 100, icon: '⭐' },
-                { name: 'Luxury Sports Car 🏎️', price: 500, icon: '🏎️' }
-              ].map(g => (
-                <button
-                  key={g.name}
-                  onClick={() => setSelectedGiftType(g)}
-                  className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all ${selectedGiftType.name === g.name ? 'bg-purple-600/30 border-purple-500 shadow-lg' : 'bg-slate-950 border-slate-800'}`}
-                >
-                  <span className="text-2xl">{g.icon}</span>
-                  <div className="mt-2">
-                    <div className="font-bold text-white text-xs">{g.name}</div>
-                    <div className="text-[11px] text-amber-400 font-bold">${g.price} USD</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <button onClick={handleSendGift} className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 font-extrabold text-xs shadow-xl">
-              Confirm & Send Gift (${selectedGiftType.price})
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* --- PAID SUBSCRIPTION CHECKOUT MODAL --- */}
-      {showSubscriptionModal && subTargetCreator && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
-          <div className="w-full max-w-md p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Crown className="w-5 h-5 text-purple-400" />
-                <span>Subscribe to {subTargetCreator.name}</span>
-              </h3>
-              <button onClick={() => setShowSubscriptionModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setSubPlanType('monthly')} className={`p-4 rounded-2xl border text-left ${subPlanType === 'monthly' ? 'bg-purple-600/30 border-purple-500' : 'bg-slate-950 border-slate-800'}`}>
-                <div className="font-bold text-white text-xs">Monthly</div>
-                <div className="text-sm font-extrabold text-purple-300 mt-1">${subTargetCreator.monthlyPrice} /mo</div>
-              </button>
-              <button onClick={() => setSubPlanType('yearly')} className={`p-4 rounded-2xl border text-left ${subPlanType === 'yearly' ? 'bg-purple-600/30 border-purple-500' : 'bg-slate-950 border-slate-800'}`}>
-                <div className="font-bold text-white text-xs">Yearly</div>
-                <div className="text-sm font-extrabold text-purple-300 mt-1">${subTargetCreator.yearlyPrice} /yr</div>
-              </button>
-            </div>
-            <button onClick={handleSubscribeCheckout} className="w-full py-3.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-xl">
-              Confirm Secure Subscription
-            </button>
-          </div>
+      {/* --- REFERENCE LOGIN MODAL (QUICK NAME / YEARS / GENDER CALL SETUP) --- */}
+      {showReferenceLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-xl p-4 overflow-y-auto">
+          <ReferenceLoginScreen
+            initialName={user.name}
+            initialGender={user.gender}
+            initialTargetGender={preferences.targetGender}
+            initialAge={user.age}
+            avatarUrl={user.avatar}
+            currentUserId={user.email || user.userId || 'guest-user'}
+            currentUserProfileId={user.profileId || 'ORI-100001'}
+            firebaseUser={firebaseUser}
+            authLoading={authLoading}
+            onStartChat={handleStartReferenceChat}
+            onOpenPrivateMessageWithPeer={(peerId) => {
+              setShowReferenceLoginModal(false);
+              setSelectedDmPeer(peerId);
+              setActiveTab('messages');
+              fetchMessages();
+              fetchMyFriends();
+            }}
+            onStartDirectCall={(peerId, peerName, callType, peerProfileId, peerAvatar) => {
+              setShowReferenceLoginModal(false);
+              setActiveInstagramCall({
+                partnerId: peerId,
+                partnerName: peerName || peerId,
+                partnerProfileId: peerProfileId || (peerId.startsWith('ORI-') ? peerId : 'ORI-100204'),
+                partnerAvatar: peerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+                callType: callType || 'video',
+                isIncoming: false,
+              });
+            }}
+            onGoogleSignIn={handleGoogleSignIn}
+            onOpenPrivacyPage={() => {
+              setShowReferenceLoginModal(false);
+              setActiveTab('privacy-policy');
+            }}
+            onCloseModal={() => setShowReferenceLoginModal(false)}
+            showToast={showToast}
+          />
         </div>
       )}
 
@@ -5122,12 +4790,12 @@ export default function App() {
         />
       )}
 
-      {/* --- CREATOR PROFILE MODAL --- */}
+      {/* --- MEMBER PROFILE MODAL --- */}
       {selectedProfileForModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
           <div className="w-full max-w-lg p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white">Creator Profile</h3>
+              <h3 className="text-lg font-bold text-white">Member Profile</h3>
               <button onClick={() => setSelectedProfileForModal(null)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex items-center gap-6">
@@ -5158,8 +4826,27 @@ export default function App() {
             </div>
             <p className="text-xs text-slate-300 bg-slate-950 p-4 rounded-2xl">{selectedProfileForModal.bio}</p>
             <div className="flex gap-3">
-              <button onClick={() => { setGiftTargetName(selectedProfileForModal.name); setSelectedProfileForModal(null); setShowGiftModal(true); }} className="flex-1 py-3 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs">Give Gift</button>
-              <button onClick={() => { setSubTargetCreator(selectedProfileForModal); setSelectedProfileForModal(null); setShowSubscriptionModal(true); }} className="flex-1 py-3 rounded-xl bg-purple-600 text-white font-bold text-xs">Subscribe</button>
+              <button
+                onClick={() => {
+                  handleToggleFollow(selectedProfileForModal.id);
+                }}
+                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs hover:bg-slate-700"
+              >
+                {follows.includes(selectedProfileForModal.id) ? 'Following (Free)' : 'Follow Free'}
+              </button>
+              <button
+                onClick={() => {
+                  const target = selectedProfileForModal.username || selectedProfileForModal.id;
+                  setSelectedProfileForModal(null);
+                  setSelectedDmPeer(target);
+                  setActiveTab('messages');
+                  fetchMessages();
+                  fetchMyFriends();
+                }}
+                className="flex-1 py-3 rounded-xl bg-purple-600 text-white font-bold text-xs hover:bg-purple-500"
+              >
+                Send Message
+              </button>
             </div>
           </div>
         </div>
@@ -5203,118 +4890,6 @@ export default function App() {
         </div>
       )}
 
-      {/* --- SERVER-VALIDATED ADULT 18+ VERIFICATION MODAL --- */}
-      {ageModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
-          <form
-            onSubmit={handleSubmitServerAgeVerification}
-            className="w-full max-w-md p-7 rounded-3xl bg-slate-900 border border-purple-500/40 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
-          >
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <span>18+ Adult Eligibility Verification</span>
-              </h3>
-              <button type="button" onClick={() => setAgeModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Live video matching is restricted strictly to adults aged 18+. Your exact birth date and hashed ID reference are validated server-side and never displayed publicly.
-            </p>
-
-            {!ageVerifyStatus?.thirdPartyKycConfigured && (
-              <div className="p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-[11px] text-amber-200">
-                Server DOB &amp; cryptographic ID-reference assurance is active. External automated 3P ID/KYC document API is not connected in this environment.
-              </div>
-            )}
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="text-[11px] font-semibold text-slate-300">Date of Birth (Must be 18+)</label>
-                <input
-                  type="date"
-                  required
-                  value={verifyDobInput}
-                  onChange={(e) => setVerifyDobInput(e.target.value)}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-300">ID Document Type</label>
-                  <select
-                    value={verifyDocType}
-                    onChange={(e) => setVerifyDocType(e.target.value as any)}
-                    className="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs"
-                  >
-                    <option value="national_id">National ID / NID</option>
-                    <option value="passport">Passport</option>
-                    <option value="driver_license">Driver&apos;s License</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-300">ID Last 4+ Chars</label>
-                  <input
-                    type="text"
-                    required
-                    minLength={4}
-                    maxLength={12}
-                    placeholder="e.g. 4829"
-                    value={verifyIdLast4}
-                    onChange={(e) => setVerifyIdLast4(e.target.value)}
-                    className="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-semibold text-slate-300">Issuing Country</label>
-                <input
-                  type="text"
-                  required
-                  value={verifyCountry}
-                  onChange={(e) => setVerifyCountry(e.target.value)}
-                  placeholder="Bangladesh"
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs"
-                />
-              </div>
-
-              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={verifyAttestation}
-                  onChange={(e) => setVerifyAttestation(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 mt-0.5 shrink-0"
-                />
-                <span className="text-[11px] text-slate-300 leading-relaxed">
-                  I confirm I am at least 18 years old and accept OrioLiveCall&apos;s Adult Safety &amp; Community Rules.
-                </span>
-              </label>
-            </div>
-
-            <div className="flex gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setAgeModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={verifySubmitting}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold disabled:opacity-50"
-              >
-                {verifySubmitting ? 'Verifying...' : 'Verify 18+ Status'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
       <footer className="py-6 px-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-center gap-4 flex-wrap">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#05060f] border border-purple-500/40 shrink-0">
@@ -5336,6 +4911,16 @@ export default function App() {
           </button>
           <span>·</span>
           <a
+            href="/privacy-policy.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+          >
+            <span>Privacy Policy &amp; Google Login</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+          <span>·</span>
+          <a
             href="/security-privacy.html"
             target="_blank"
             rel="noopener noreferrer"
@@ -5353,7 +4938,7 @@ export default function App() {
 
       {/* --- FLOATING SECURITY & PRIVACY GUARDIAN WIDGET BADGE (AVAILABLE ON EVERY PAGE) --- */}
       {!isFullscreen && (
-        <div className={`fixed z-40 transition-all ${cookieConsentOpen ? 'bottom-28 md:bottom-24 left-4 sm:left-6' : 'bottom-5 left-4 sm:left-6'}`}>
+        <div className="fixed z-40 transition-all bottom-5 left-4 sm:left-6">
           <button
             onClick={() => setShowFloatingSecurityWidget(true)}
             className="group flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-purple-500/40 hover:border-purple-400 text-white shadow-xl shadow-purple-950/40 hover:shadow-purple-600/25 transition-all text-xs font-bold"
@@ -5498,10 +5083,26 @@ export default function App() {
           onChangeLang={setLang}
           userProfileId={user.profileId || 'ORI-100004'}
           userName={user.name}
-          balance={wallet?.balance ?? 1850}
-          activeSubsCount={subscriptions.filter((s) => s.status === 'active').length}
+          balance={0}
+          activeSubsCount={0}
           onNavigateTab={(tab) => setActiveTab(tab as any)}
-          bottomOffsetClass={cookieConsentOpen ? 'bottom-28 md:bottom-24' : 'bottom-5'}
+          bottomOffsetClass="bottom-5"
+          showToast={showToast}
+        />
+      )}
+
+      {/* --- INSTAGRAM / FACETIME 1:1 LIVE VIDEO CALLING MODAL --- */}
+      {activeInstagramCall && (
+        <InstagramVideoCallingModal
+          session={activeInstagramCall}
+          currentUserId={user.email || user.userId || 'guest-user'}
+          currentUserName={user.name || 'User'}
+          currentUserProfileId={user.profileId || 'ORI-100001'}
+          socket={socket}
+          onEndCall={() => {
+            setActiveInstagramCall(null);
+            showToast('Call ended.', 'info');
+          }}
           showToast={showToast}
         />
       )}

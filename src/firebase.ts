@@ -130,7 +130,9 @@ export async function syncUserToFirestore(
         uid,
         userId: safeUserId,
         ...(validProfileId ? { profileId: validProfileId } : {}),
+        displayName: (fbUser.displayName || profileData.name || '').slice(0, 120),
         email: (fbUser.email || '').slice(0, 254),
+        photoURL: (fbUser.photoURL || profileData.avatar || '').slice(0, 500),
         birthDate: (profileData.birthDate || '').slice(0, 20),
         age: Math.min(130, Math.max(0, Number(profileData.age || 21))),
         verified: Boolean(profileData.verified),
@@ -139,13 +141,16 @@ export async function syncUserToFirestore(
         cameraEnabled: profileData.cameraEnabled ?? true,
         micEnabled: profileData.micEnabled ?? true,
         createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
     } else {
       const existingData = existingUser.data();
       await updateDoc(userRef, {
         ...(!existingData?.profileId && validProfileId ? { profileId: validProfileId } : {}),
+        displayName: (fbUser.displayName || profileData.name || '').slice(0, 120),
         email: (fbUser.email || '').slice(0, 254),
+        photoURL: (fbUser.photoURL || profileData.avatar || '').slice(0, 500),
         birthDate: (profileData.birthDate || '').slice(0, 20),
         age: Math.min(130, Math.max(0, Number(profileData.age || 21))),
         verified: Boolean(profileData.verified),
@@ -153,6 +158,7 @@ export async function syncUserToFirestore(
         videoQuality: profileData.videoQuality || 'HD',
         cameraEnabled: profileData.cameraEnabled ?? true,
         micEnabled: profileData.micEnabled ?? true,
+        lastLoginAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
     }

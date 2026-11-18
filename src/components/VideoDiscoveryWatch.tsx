@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Search, Play, Pause, Volume2, VolumeX, Maximize, Heart, Bookmark,
-  ShieldCheck, Lock, Crown, Flag, Flame, Clock, Sparkles, UserPlus,
-  UserCheck, Gift, X, Filter
+  ShieldCheck, Lock, Flag, Flame, Clock, Sparkles, UserPlus,
+  UserCheck, X, Filter
 } from 'lucide-react';
 import { VideoFeedItem, SubscriptionItem, Language } from '../types/orio';
 
@@ -27,8 +27,8 @@ interface Props {
   followerCounts: Record<string, number>;
   subscriberCounts: Record<string, number>;
   onToggleFollow: (creatorId: string) => void;
-  onOpenSubscribeModal: (creatorId: string, creatorName: string) => void;
-  onOpenGiftModal: (creatorName: string) => void;
+  onOpenSubscribeModal?: (creatorId: string, creatorName: string) => void;
+  onOpenGiftModal?: (creatorName: string) => void;
   onOpenReport: (targetType: 'video', targetId: string) => void;
   onSyncLikeFirestore?: (videoId: string, liked: boolean) => void;
   showToast: (msg: string, type?: 'info' | 'success' | 'error') => void;
@@ -269,7 +269,7 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
             <span>{lang === 'bn' ? 'ভিডিও সার্চ ও ফ্রি ওয়াচ' : 'Video Discovery & Free Watch'}</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Watch public creator videos completely free. Private & Premium videos are protected on the backend.
+            Watch community videos 100% free with responsive playback and safety screening.
           </p>
         </div>
 
@@ -403,10 +403,8 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
                 onChange={(e) => setVisibilityFilter(e.target.value as any)}
                 className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs"
               >
-                <option value="all">All Access Levels</option>
-                <option value="public">Free Public Only</option>
-                <option value="private">Authorized Private</option>
-                <option value="premium">Premium Memberships</option>
+                <option value="all">All Free Videos</option>
+                <option value="public">Public Library</option>
               </select>
 
               <select
@@ -490,20 +488,11 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
                     <Lock className="w-8 h-8 text-purple-400" />
                   </div>
                   <h3 className="text-xl font-bold text-white">
-                    {selectedVideo.visibility === 'premium' ? 'Premium Membership Video' : 'Private Video Protected'}
+                    Protected Video Content
                   </h3>
                   <p className="text-xs text-slate-400 max-w-md mx-auto">
-                    {selectedVideo.accessReason || 'This video is restricted and protected on the server.'}
+                    {selectedVideo.accessReason || 'This video is restricted and protected by community privacy rules.'}
                   </p>
-                  {selectedVideo.visibility === 'premium' && (
-                    <button
-                      onClick={() => onOpenSubscribeModal(selectedVideo.creatorId, selectedVideo.creatorName)}
-                      className="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-xs shadow-lg inline-flex items-center gap-2"
-                    >
-                      <Crown className="w-4 h-4" />
-                      <span>Subscribe to {selectedVideo.creatorName}</span>
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -547,14 +536,6 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
                   </button>
 
                   <button
-                    onClick={() => onOpenGiftModal(selectedVideo.creatorName)}
-                    className="px-3.5 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1.5"
-                  >
-                    <Gift className="w-4 h-4" />
-                    <span>Gift</span>
-                  </button>
-
-                  <button
                     onClick={() => onOpenReport('video', selectedVideo.id)}
                     className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-rose-400 text-xs font-semibold flex items-center gap-1"
                   >
@@ -591,8 +572,7 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div className="text-[11px] text-slate-400">
-                      {(followerCounts[selectedVideo.creatorId] || 0)} followers •{' '}
-                      {(subscriberCounts[selectedVideo.creatorId] || 0)} active members
+                      {(followerCounts[selectedVideo.creatorId] || 0)} followers
                     </div>
                   </div>
                 </div>
@@ -617,14 +597,6 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
                         <span>Follow Free</span>
                       </>
                     )}
-                  </button>
-
-                  <button
-                    onClick={() => onOpenSubscribeModal(selectedVideo.creatorId, selectedVideo.creatorName)}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg"
-                  >
-                    <Crown className="w-3.5 h-3.5" />
-                    <span>Subscribe</span>
                   </button>
                 </div>
               </div>
@@ -678,7 +650,7 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
           ) : displayedList.length === 0 ? (
             <div className="p-12 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-2">
               <p className="text-sm font-bold text-white">No videos found matching your current filter.</p>
-              <p className="text-xs text-slate-400">Try clearing filters or upload a non-explicit video in the Creator Dashboard.</p>
+              <p className="text-xs text-slate-400">Try clearing filters to explore available free community videos.</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -762,8 +734,8 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
       {creators.length > 0 && viewMode === 'discover' && !selectedVideo && (
         <div className="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 space-y-4">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Crown className="w-4 h-4 text-amber-400" />
-            <span>Featured Verified Creators — Follow Free or Subscribe</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Featured Verified Profiles — Follow Free</span>
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {creators.map((c) => {
@@ -775,7 +747,7 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
                     <div className="min-w-0">
                       <div className="font-bold text-xs text-white truncate">{c.name}</div>
                       <div className="text-[10px] text-slate-400">
-                        {followerCounts[c.id] || 0} followers • {subscriberCounts[c.id] || 0} members
+                        {followerCounts[c.id] || 0} followers
                       </div>
                     </div>
                   </div>
@@ -787,12 +759,6 @@ export const VideoDiscoveryWatch: React.FC<Props> = ({
                       }`}
                     >
                       {isFollowing ? 'Following' : 'Follow'}
-                    </button>
-                    <button
-                      onClick={() => onOpenSubscribeModal(c.id, c.name)}
-                      className="px-2.5 py-1.5 rounded-lg bg-purple-600 text-white text-[10px] font-bold"
-                    >
-                      Sub
                     </button>
                   </div>
                 </div>

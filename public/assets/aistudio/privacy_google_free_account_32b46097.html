@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Privacy Policy</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f9fafb;
+      --ink: #111827;
+      --body: #374151;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --ok-bg: #ecfdf5;
+      --ok-border: #a7f3d0;
+      --ok-ink: #065f46;
+      --err-bg: #fef2f2;
+      --err-border: #fecaca;
+      --err-ink: #991b1b;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-inner {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .page-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    main {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 36px 20px 64px;
+    }
+    h1 {
+      font-size: clamp(28px, 4.5vw, 38px);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+    .meta {
+      margin: 0 0 24px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .free-note {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 14px;
+      color: var(--body);
+      margin-bottom: 24px;
+    }
+    .account-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    .account-card h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: var(--ink);
+      border: 0;
+      padding: 0;
+    }
+    .account-sub {
+      margin: 0 0 16px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .btn {
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .btn:hover:not(:disabled) {
+      background: #f3f4f6;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: var(--ink);
+      color: #ffffff;
+      border-color: var(--ink);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #1f2937;
+    }
+    .btn-google {
+      background: #ffffff;
+      color: #1f2937;
+      border: 1px solid #d1d5db;
+    }
+    .btn-google:hover:not(:disabled) {
+      background: #f9fafb;
+      border-color: #9ca3af;
+    }
+    .btn-danger {
+      background: #ffffff;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: #fef2f2;
+    }
+    .loading-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--muted);
+      padding: 6px 0;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #e5e7eb;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .profile-box {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .profile-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      background: #eef2ff;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .profile-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+      word-break: break-word;
+    }
+    .profile-email {
+      font-size: 14px;
+      color: var(--body);
+      margin: 2px 0 6px;
+      word-break: break-all;
+    }
+    .profile-meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .alert {
+      margin-top: 12px;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .alert-ok {
+      background: var(--ok-bg);
+      border: 1px solid var(--ok-border);
+      color: var(--ok-ink);
+    }
+    .alert-err {
+      background: var(--err-bg);
+      border: 1px solid var(--err-border);
+      color: var(--err-ink);
+    }
+    .toc {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      background: var(--bg);
+    }
+    .toc-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 6px 16px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 14px;
+    }
+    .toc-grid a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .toc-grid a:hover {
+      text-decoration: underline;
+    }
+    section.policy-section {
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+    }
+    section.policy-section h2 {
+      font-size: 20px;
+      line-height: 1.3;
+      margin: 0 0 10px;
+      color: var(--ink);
+    }
+    section.policy-section p {
+      margin: 0 0 10px;
+      color: var(--body);
+    }
+    section.policy-section ul {
+      margin: 8px 0 10px;
+      padding-left: 20px;
+      color: var(--body);
+    }
+    section.policy-section li {
+      margin: 5px 0;
+    }
+    footer {
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      padding: 24px 20px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    [hidden] { display: none !important; }
+    @media (max-width: 640px) {
+      main { padding: 24px 16px 48px; }
+      .header-inner { padding: 12px 16px; }
+      .account-card { padding: 16px; }
+      .profile-box { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="page-label">Privacy Policy</div>
+      <div class="header-actions">
+        <button type="button" id="headerSignInBtn" class="btn btn-primary" hidden>Sign in with Google</button>
+        <button type="button" id="headerSignOutBtn" class="btn btn-danger" hidden>Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Last updated: November 17, 2026</p>
+
+    <div class="free-note">
+      <strong>Free Service Notice:</strong> All features described on this page are available free of charge without subscriptions, paid memberships, checkout pages, credit purchases, or payment processing.
+    </div>
+
+    <!-- Google Sign-In & Account Storage Card -->
+    <div class="account-card" aria-live="polite">
+      <h2>Google Account &amp; Saved Profile</h2>
+      <p class="account-sub">
+        Sign in with your Google account to create or access your securely stored profile across devices. Google handles password entry directly on its secure authentication screen; we never collect or store your Google password.
+      </p>
+
+      <div id="authLoadingRow" class="loading-row">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="authLoadingText">Checking authentication status…</span>
+      </div>
+
+      <div id="signedOutPanel" hidden>
+        <button type="button" id="cardSignInBtn" class="btn btn-google">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+      </div>
+
+      <div id="signedInPanel" hidden>
+        <div class="profile-box">
+          <div class="profile-main">
+            <img id="profilePhoto" class="avatar" alt="Google profile photo" referrerpolicy="no-referrer" hidden />
+            <div id="profileFallback" class="avatar" hidden>U</div>
+            <div>
+              <p id="profileName" class="profile-name"></p>
+              <p id="profileEmail" class="profile-email"></p>
+              <div class="profile-meta">
+                <span id="profileUid"></span>
+                <span id="profileCreated"></span>
+                <span id="profileLastLogin"></span>
+              </div>
+            </div>
+          </div>
+          <button type="button" id="cardSignOutBtn" class="btn btn-danger">Sign out</button>
+        </div>
+      </div>
+
+      <div id="authSuccessMsg" class="alert alert-ok" hidden></div>
+      <div id="authErrorMsg" class="alert alert-err" role="alert" hidden></div>
+    </div>
+
+    <nav class="toc" aria-label="Privacy Policy Sections">
+      <div class="toc-title">Contents</div>
+      <ol class="toc-grid">
+        <li><a href="#s1">1. Introduction</a></li>
+        <li><a href="#s2">2. Information We Collect</a></li>
+        <li><a href="#s3">3. Google Account Authentication</a></li>
+        <li><a href="#s4">4. How We Use Information</a></li>
+        <li><a href="#s5">5. Account Information Storage</a></li>
+        <li><a href="#s6">6. Camera and Microphone Permissions</a></li>
+        <li><a href="#s7">7. Video and Audio Communication</a></li>
+        <li><a href="#s8">8. Messages and User Content</a></li>
+        <li><a href="#s9">9. Cookies and Local Storage</a></li>
+        <li><a href="#s10">10. Third-Party Services</a></li>
+        <li><a href="#s11">11. Data Security</a></li>
+        <li><a href="#s12">12. Data Retention</a></li>
+        <li><a href="#s13">13. Account Deletion</a></li>
+        <li><a href="#s14">14. User Privacy Rights</a></li>
+        <li><a href="#s15">15. Children's Privacy</a></li>
+      </ol>
+    </nav>
+
+    <section id="s1" class="policy-section">
+      <h2>1. Introduction</h2>
+      <p>This Privacy Policy explains how personal and technical information is collected, used, stored, and protected when you access this website, sign in with a Google account, or use communication features provided through the service.</p>
+      <p>We are committed to transparency, data minimization, and providing free access to features without hidden fees, paid memberships, or commercial sale of personal information.</p>
+    </section>
+
+    <section id="s2" class="policy-section">
+      <h2>2. Information We Collect</h2>
+      <p>Depending on how you interact with the service, we may process the following categories of information:</p>
+      <ul>
+        <li><strong>Google Account Profile Information:</strong> When you choose to sign in with Google, we receive your unique user identifier (UID), display name, email address, and profile photo URL as authorized by you during the Google sign-in prompt.</li>
+        <li><strong>Account Activity Timestamps:</strong> Account creation timestamps and last-login timestamps used to maintain session continuity and protect account security.</li>
+        <li><strong>Communication &amp; Technical Metadata:</strong> Basic connection metadata, browser capabilities, and error diagnostics strictly required to operate real-time features reliably.</li>
+      </ul>
+      <p>We do not collect payment cards, bank account credentials, billing addresses, or subscription payment details because this service does not operate any payment system.</p>
+    </section>
+
+    <section id="s3" class="policy-section">
+      <h2>3. Google Account Authentication</h2>
+      <p>Authentication is powered by Firebase Authentication using Google as the login provider. Password entry and multi-factor verification take place exclusively on Google's secure authentication pages. This website never asks for, receives, or stores your Google password.</p>
+      <p>Firebase authentication persistence keeps your session active on your browser until you explicitly click Sign out or clear your browser storage.</p>
+    </section>
+
+    <section id="s4" class="policy-section">
+      <h2>4. How We Use Information</h2>
+      <p>Information collected is used strictly to:</p>
+      <ul>
+        <li>Authenticate your account and keep you signed in across visits and devices.</li>
+        <li>Display your basic account profile (name, email, and profile photo) to you when signed in.</li>
+        <li>Maintain your user preferences, privacy settings, and saved account state.</li>
+        <li>Prevent unauthorized access, abuse, spam, and technical failures.</li>
+        <li>Comply with applicable legal obligations and respond to privacy requests.</li>
+      </ul>
+    </section>
+
+    <section id="s5" class="policy-section">
+      <h2>5. Account Information Storage</h2>
+      <p>When you sign in with Google, your account profile is stored in Cloud Firestore under your private document path (<code>users/{uid}</code>), containing your UID, display name, email address, profile photo URL, account creation timestamp, and last-login timestamp.</p>
+      <p>Strict database security rules ensure that only you (verified by your authenticated UID) can read or update your private account document. Private account records are never exposed publicly to other visitors.</p>
+    </section>
+
+    <section id="s6" class="policy-section">
+      <h2>6. Camera and Microphone Permissions</h2>
+      <p>This Privacy Policy page does not request camera or microphone permissions. If you choose to use video or audio features elsewhere on the service, your browser will prompt you for explicit camera and microphone permission before any media device is activated.</p>
+      <p>You may revoke camera or microphone permissions at any time through your browser or device settings.</p>
+    </section>
+
+    <section id="s7" class="policy-section">
+      <h2>7. Video and Audio Communication</h2>
+      <p>Real-time video and audio sessions are transmitted over encrypted channels (such as WebRTC DTLS/SRTP) between participants or authorized relay servers when network traversal is required. Video and audio streams are not recorded by default.</p>
+    </section>
+
+    <section id="s8" class="policy-section">
+      <h2>8. Messages and User Content</h2>
+      <p>If you send messages or publish user content through the service, that content is processed solely to deliver it to your intended recipients or audience according to the privacy controls you select. Do not share sensitive financial, government ID, or confidential personal data inside public or peer messages.</p>
+    </section>
+
+    <section id="s9" class="policy-section">
+      <h2>9. Cookies and Local Storage</h2>
+      <p>Essential browser storage (such as IndexedDB and localStorage used by Firebase Authentication) is used to remember your signed-in state and basic preferences. We do not use third-party advertising trackers or sell browsing profiles.</p>
+    </section>
+
+    <section id="s10" class="policy-section">
+      <h2>10. Third-Party Services</h2>
+      <p>This page relies on Google Firebase Authentication and Cloud Firestore to provide secure Google Sign-In and private database storage. Google processes authentication data in accordance with Google's Privacy Policy and Firebase security terms. Third-party infrastructure providers may enforce their own service limits or quotas.</p>
+    </section>
+
+    <section id="s11" class="policy-section">
+      <h2>11. Data Security</h2>
+      <p>We protect user data using HTTPS transport encryption, Firebase Authentication token verification, and zero-trust Firestore security rules that restrict document reads and writes to the verified document owner. While we apply industry-standard safeguards, no online transmission or storage method can guarantee absolute security.</p>
+    </section>
+
+    <section id="s12" class="policy-section">
+      <h2>12. Data Retention</h2>
+      <p>Account records stored under <code>users/{uid}</code> are retained while your account remains active so that you can sign back in on any supported device. Diagnostic or security logs, if generated, are kept only as long as necessary to maintain safety and reliability.</p>
+    </section>
+
+    <section id="s13" class="policy-section">
+      <h2>13. Account Deletion</h2>
+      <p>You may stop using the service and sign out at any time. Users may request complete deletion of their account record and associated profile data stored in Firestore, subject to any minimal records required to be retained for legal compliance, abuse prevention, or security auditing.</p>
+    </section>
+
+    <section id="s14" class="policy-section">
+      <h2>14. User Privacy Rights</h2>
+      <p>Depending on your jurisdiction, you have the right to:</p>
+      <ul>
+        <li>Access the personal account information stored about you (viewable directly when signed in on this page).</li>
+        <li>Request correction of inaccurate account details (automatically refreshed from your Google profile upon sign-in).</li>
+        <li>Request deletion of your account and personal data.</li>
+        <li>Withdraw consent for optional permissions such as browser camera or microphone access.</li>
+      </ul>
+    </section>
+
+    <section id="s15" class="policy-section">
+      <h2>15. Children's Privacy</h2>
+      <p>This service is not directed to children under the age of 13 (or the higher minimum age required by applicable local law, including 18+ restrictions for adult live-video features). We do not knowingly collect personal information from underage individuals. If you believe an underage user has provided personal data, please contact us promptly so the account can be removed.</p>
+    </section>
+  </main>
+
+  <footer>
+    Privacy Policy &middot; Free Service &middot; Protected by Firebase Authentication &amp; Firestore Security Rules
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      onAuthStateChanged,
+      setPersistence,
+      browserLocalPersistence,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      getDocFromServer,
+      setDoc,
+      updateDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB60wcbt0J5MhIbm4ks8xIyh0BA6ZZW9Bg",
+      authDomain: "psychic-veld-jnzsc.firebaseapp.com",
+      projectId: "psychic-veld-jnzsc",
+      appId: "1:806935480144:web:5c189707882c651eae0e55"
+    };
+    const FIRESTORE_DB_ID = "ai-studio-oriolivecall-b5df5aad-ca27-4d6e-b374-b4abfa0884c1";
+
+    const OperationType = {
+      CREATE: "create",
+      UPDATE: "update",
+      DELETE: "delete",
+      LIST: "list",
+      GET: "get",
+      WRITE: "write"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const loadingRow = $("authLoadingRow");
+    const loadingText = $("authLoadingText");
+    const signedOutPanel = $("signedOutPanel");
+    const signedInPanel = $("signedInPanel");
+    const headerSignInBtn = $("headerSignInBtn");
+    const headerSignOutBtn = $("headerSignOutBtn");
+    const cardSignInBtn = $("cardSignInBtn");
+    const cardSignOutBtn = $("cardSignOutBtn");
+    const profilePhoto = $("profilePhoto");
+    const profileFallback = $("profileFallback");
+    const profileName = $("profileName");
+    const profileEmail = $("profileEmail");
+    const profileUid = $("profileUid");
+    const profileCreated = $("profileCreated");
+    const profileLastLogin = $("profileLastLogin");
+    const authSuccessMsg = $("authSuccessMsg");
+    const authErrorMsg = $("authErrorMsg");
+
+    function showSuccess(msg) {
+      authSuccessMsg.textContent = msg;
+      authSuccessMsg.hidden = !msg;
+    }
+
+    function showError(msg) {
+      authErrorMsg.textContent = msg;
+      authErrorMsg.hidden = !msg;
+    }
+
+    function clearMessages() {
+      showSuccess("");
+      showError("");
+    }
+
+    function setLoading(active, text = "Loading…") {
+      loadingText.textContent = text;
+      loadingRow.hidden = !active;
+    }
+
+    function formatTimestamp(ts) {
+      if (!ts) return "Just now";
+      try {
+        const date = typeof ts.toDate === "function" ? ts.toDate() : new Date(ts);
+        return date.toLocaleString();
+      } catch {
+        return "Available";
+      }
+    }
+
+    function handleFirestoreError(auth, error, operationType, path) {
+      const errInfo = {
+        error: error instanceof Error ? error.message : String(error),
+        operationType,
+        path,
+        authInfo: {
+          userId: auth.currentUser?.uid || null,
+          email: auth.currentUser?.email || null,
+          emailVerified: auth.currentUser?.emailVerified ?? null
+        }
+      };
+      console.error("Firestore Error:", JSON.stringify(errInfo));
+      throw new Error(error instanceof Error ? error.message : "Database operation failed.");
+    }
+
+    function renderProfile(user, storedData) {
+      const name = storedData?.displayName || user.displayName || "Google User";
+      const email = storedData?.email || user.email || "";
+      const photo = storedData?.photoURL || user.photoURL || "";
+
+      profileName.textContent = name;
+      profileEmail.textContent = email;
+      profileUid.textContent = "Account UID: " + user.uid;
+      profileCreated.textContent = "Account Created: " + formatTimestamp(storedData?.createdAt);
+      profileLastLogin.textContent = "Last Login: " + formatTimestamp(storedData?.lastLoginAt);
+
+      if (photo) {
+        profilePhoto.src = photo;
+        profilePhoto.hidden = false;
+        profileFallback.hidden = true;
+        profilePhoto.onerror = () => {
+          profilePhoto.hidden = true;
+          profileFallback.textContent = (name.trim()[0] || "U").toUpperCase();
+          profileFallback.hidden = false;
+        };
+      } else {
+        profilePhoto.hidden = true;
+        profileFallback.textContent = (name.trim()[0] || "U").toUpperCase();
+        profileFallback.hidden = false;
+      }
+
+      signedOutPanel.hidden = true;
+      signedInPanel.hidden = false;
+      headerSignInBtn.hidden = true;
+      headerSignOutBtn.hidden = false;
+    }
+
+    function renderSignedOut() {
+      signedInPanel.hidden = true;
+      signedOutPanel.hidden = false;
+      headerSignInBtn.hidden = false;
+      headerSignOutBtn.hidden = true;
+    }
+
+    function friendlyAuthError(err) {
+      const code = err?.code || "";
+      if (code === "auth/popup-closed-by-user") return "Sign-in was cancelled because the Google popup window was closed.";
+      if (code === "auth/popup-blocked") return "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.";
+      if (code === "auth/network-request-failed") return "Network error occurred during Google sign-in. Please check your connection and retry.";
+      if (code === "auth/unauthorized-domain") return "This domain is not authorized in Firebase Authentication settings.";
+      return err?.message || "Unable to complete Google sign-in. Please try again.";
+    }
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app, FIRESTORE_DB_ID);
+
+      getDocFromServer(doc(db, "test", "connection")).catch((err) => {
+        if (err instanceof Error && err.message.includes("the client is offline")) {
+          console.error("Firestore connectivity warning: client appears offline.");
+        }
+      });
+
+      await setPersistence(auth, browserLocalPersistence);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      async function saveAndLoadUserProfile(user, isExplicitLogin) {
+        const path = `users/${user.uid}`;
+        const userRef = doc(db, "users", user.uid);
+        let existingSnap;
+        try {
+          existingSnap = await getDoc(userRef);
+        } catch (err) {
+          handleFirestoreError(auth, err, OperationType.GET, path);
+        }
+
+        const safeDisplayName = (user.displayName || "Google User").slice(0, 120);
+        const safeEmail = (user.email || "").slice(0, 254);
+        const safePhotoUrl = (user.photoURL || "").slice(0, 500);
+        const safeUserId = ("USR-" + user.uid.replace(/[^a-zA-Z0-9_-]/g, "")).slice(0, 64);
+
+        if (!existingSnap.exists()) {
+          try {
+            await setDoc(userRef, {
+              uid: user.uid,
+              userId: safeUserId,
+              displayName: safeDisplayName,
+              email: safeEmail,
+              photoURL: safePhotoUrl,
+              verified: true,
+              preferredLanguage: "en",
+              createdAt: serverTimestamp(),
+              lastLoginAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+          } catch (err) {
+            handleFirestoreError(auth, err, OperationType.CREATE, path);
+          }
+        } else if (isExplicitLogin) {
+          try {
+            await updateDoc(userRef, {
+              displayName: safeDisplayName,
+              email: safeEmail,
+              photoURL: safePhotoUrl,
+              verified: true,
+              lastLoginAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+          } catch (err) {
+            handleFirestoreError(auth, err, OperationType.UPDATE, path);
+          }
+        }
+
+        try {
+          const freshSnap = await getDoc(userRef);
+          return freshSnap.exists() ? freshSnap.data() : existingSnap.data();
+        } catch (err) {
+          handleFirestoreError(auth, err, OperationType.GET, path);
+        }
+      }
+
+      async function handleSignIn() {
+        clearMessages();
+        cardSignInBtn.disabled = true;
+        headerSignInBtn.disabled = true;
+        setLoading(true, "Signing in with Google…");
+        try {
+          const result = await signInWithPopup(auth, provider);
+          const storedData = await saveAndLoadUserProfile(result.user, true);
+          renderProfile(result.user, storedData);
+          showSuccess("Signed in with Google. Your profile is securely saved and accessible across devices.");
+        } catch (err) {
+          showError(friendlyAuthError(err));
+        } finally {
+          setLoading(false);
+          cardSignInBtn.disabled = false;
+          headerSignInBtn.disabled = false;
+        }
+      }
+
+      async function handleSignOut() {
+        clearMessages();
+        setLoading(true, "Signing out…");
+        try {
+          await signOut(auth);
+          renderSignedOut();
+          showSuccess("You have signed out cleanly.");
+        } catch (err) {
+          showError(err?.message || "Failed to sign out.");
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      cardSignInBtn.addEventListener("click", handleSignIn);
+      headerSignInBtn.addEventListener("click", handleSignIn);
+      cardSignOutBtn.addEventListener("click", handleSignOut);
+      headerSignOutBtn.addEventListener("click", handleSignOut);
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            const storedData = await saveAndLoadUserProfile(user, false);
+            renderProfile(user, storedData);
+          } catch (err) {
+            renderProfile(user, null);
+            showError(err?.message || "Signed in, but could not sync profile data.");
+          }
+        } else {
+          renderSignedOut();
+        }
+        setLoading(false);
+      });
+    } catch (err) {
+      setLoading(false);
+      renderSignedOut();
+      showError("Authentication initialization error: " + (err?.message || String(err)));
+    }
+  </script>
+</body>
+</html>
